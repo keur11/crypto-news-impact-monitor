@@ -11,9 +11,11 @@ on:
     - cron: '23 4 1 * *'   # 1. v mesecu ob 04:23 UTC
   workflow_dispatch:
 
+# Najmanjše pravice: actions: write za ponovno omogočanje workflowov; contents: write samo za objavo
+# data/keepalive.json in data/calibration.json na vejo data (brez tega opozorilo ne bi doseglo statusa).
 permissions:
-  contents: write   # veja data
-  actions: write    # ponovno omogočanje workflowov
+  contents: write
+  actions: write
 
 concurrency:
   group: data-branch
@@ -61,7 +63,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
       - name: Kalibracija
         run: npm run --silent calibrate

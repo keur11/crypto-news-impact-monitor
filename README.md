@@ -280,6 +280,23 @@ Primer FBI o Severni Koreji iz treh virov se po pravilu z ozadjem in akterji zdr
   - Prazni commiti se ne uporabljajo.
 - **Pages:** `index.html` + `data/` kot artifact (`upload-pages-artifact@v4`, `deploy-pages@v4`); `<meta name="robots" content="noindex">`.
 
+### Varnost (javni repozitorij)
+
+- **Sprožilci:** samo `schedule` in `workflow_dispatch`. Ni `pull_request` ne `pull_request_target`, zato koda iz forkov nikoli ne teče s secrets ali pravicami za pisanje. `workflow_dispatch` lahko zaženejo le uporabniki s pravico pisanja.
+- **Pravice** (`permissions:`; privzeto *Read repository contents*):
+
+| Workflow / job | Pravice | Zakaj |
+|---|---|---|
+| `collect.yml` (privzeto) | `contents: read` | – |
+| `collect.yml` → `collect` | `contents: write` | objava stanja na vejo `data` |
+| `collect.yml` → `deploy` | `pages: write`, `id-token: write` | objava na Pages |
+| `backfill.yml` | `contents: write` | objava knjižnice na vejo `data` (le pri `publish = true`) |
+| `keepalive.yml` | `actions: write`, `contents: write` | ponovno omogočanje workflowov; objava `keepalive.json` in `calibration.json` na vejo `data` (brez tega opozorilo ne doseže statusa) |
+
+- **Secrets** so podani samo korakom, ki jih potrebujejo (`npm run collect`, `smoke`, `backfill`), ne na ravni joba. `npm ci` teče z `--ignore-scripts` in brez secrets. Odvisnost `fast-xml-parser` je fiksirana na točno verzijo z `package-lock.json`.
+- **Brez vrivanja ukazov:** izhodi korakov in vnosi gredo v skripte prek `env`, ne neposredno kot `${{ … }}` v `run`.
+- **Akcije:** samo GitHubove (`actions/*`), na glavni verziji. Za strožjo različico jih lahko pripnete na SHA.
+
 ### Kontrolni seznam za prvi zagon
 
 1. **Repozitorij:** objavite kodo na GitHub (javni repozitorij). Mape `data/` in `cache/` niso v glavni veji.
@@ -287,8 +304,8 @@ Primer FBI o Severni Koreji iz treh virov se po pravilu z ozadjem in akterji zdr
    - `COINGECKO_DEMO_API_KEY` – brezplačen ključ CoinGecko Demo;
    - `CONTACT_EMAIL` – kontakt za User-Agent pri SEC (secret, ker so dnevniki javni).
 3. **Spremenljivke** (*… → Variables*): `CRON_ENABLED` pustite nenastavljeno (ali `false`), dokler ne pregledate backfilla.
-4. **Pages:** *Settings → Pages → Build and deployment → Source: GitHub Actions*.
-5. **Actions:** *Settings → Actions → General → Workflow permissions*: dovolite *Read and write* (workflowi zahtevajo `contents: write` za vejo `data`).
+4. **Pages:** *Settings → Pages → Build and deployment → Source: GitHub Actions*. To nastavite ročno; prek API iz seje Claude ni bilo mogoče.
+5. **Pravice workflowov:** privzete pravice *Read repository contents* **pustite**. Vsak workflow ima eksplicitni blok `permissions:` z najmanjšimi pravicami (glej *Varnost*).
 6. **Smoke + backfill (pregled):** *Actions → Smoke + backfill knjižnice → Run workflow* s `publish = false`.
    - **Izpis backfilla:** povzetek teka (*Summary*) vsebuje izpis smoke testa in tabelo M, z₂₄, z₇₂, V.
    - **Artifact `backfill-<id>`** (spodaj na strani teka) vsebuje `out/smoke.txt`, `out/backfill.txt`, `out/runner.txt` (država IP runnerja), `data/library.json`, `data/series/` in `data/backfill-log.json`.

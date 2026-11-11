@@ -15,8 +15,9 @@ on:
         type: boolean
         default: false
 
+# Najmanjše pravice: contents: write je potreben samo za objavo na vejo data (publish = true).
 permissions:
-  contents: write   # samo za publish = true (veja data)
+  contents: write
 
 concurrency:
   group: data-branch
@@ -26,11 +27,8 @@ jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      # Oba sta secrets: dnevniki v javnem repozitoriju so javni, secrets pa GitHub v dnevniku maskira.
-      # Datoteke (artifacti) maskira koda sama (collector/lib/redact.js).
-      CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
-      COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
+    # Secrets so podani samo korakoma smoke in backfill (ne npm ci in drugim korakom).
+    # GitHub jih maskira v dnevniku; datoteke (artifacte) maskira koda sama (collector/lib/redact.js).
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +37,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
       - name: Obnovi stanje z veje data (da objava ohrani stanje zbiralnika)
         run: |
@@ -65,6 +63,9 @@ jobs:
 
       - name: Smoke test virov
         id: smoke
+        env:
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
         run: |
           set +e
           npm run --silent smoke 2>&1 | tee out/smoke.txt
@@ -72,6 +73,9 @@ jobs:
 
       - name: Backfill knjižnice
         id: backfill
+        env:
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
         run: |
           set +e
           npm run --silent backfill 2>&1 | tee out/backfill.txt
@@ -86,11 +90,14 @@ jobs:
 
       - name: Povzetek
         if: always()
+        env:
+          SMOKE_CODE: ${{ steps.smoke.outputs.code }}
+          BACKFILL_CODE: ${{ steps.backfill.outputs.code }}
         run: |
           {
-            echo "## Smoke test (izhodna koda ${{ steps.smoke.outputs.code }})"
+            echo "## Smoke test (izhodna koda ${SMOKE_CODE})"
             echo '```'; cat out/smoke.txt 2>/dev/null; echo '```'
-            echo "## Backfill (izhodna koda ${{ steps.backfill.outputs.code }})"
+            echo "## Backfill (izhodna koda ${BACKFILL_CODE})"
             echo '```'; cat out/backfill.txt 2>/dev/null; echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -115,12 +122,17 @@ jobs:
 
       - name: Objava preskočena
         if: inputs.publish && steps.backfill.outputs.code != '0'
-        run: echo "::warning title=Knjižnica ni objavljena::Backfill se ni končal z izhodno kodo 0 (koda ${{ steps.backfill.outputs.code }}). Preglej izpis; cron ostane izklopljen."
+        env:
+          BACKFILL_CODE: ${{ steps.backfill.outputs.code }}
+        run: echo "::warning title=Knjižnica ni objavljena::Backfill se ni končal z izhodno kodo 0 (koda ${BACKFILL_CODE}). Preglej izpis; cron ostane izklopljen."
 
       # Job je rdeč, če kritičen vir ni dosegljiv (smoke = 1), backfill pade (1)
       # ali kriterij knjižnice ni izpolnjen (2). Artifact je naložen v vseh primerih.
       - name: Rezultat
         if: always()
+        env:
+          SMOKE_CODE: ${{ steps.smoke.outputs.code }}
+          BACKFILL_CODE: ${{ steps.backfill.outputs.code }}
         run: |
-          echo "smoke=${{ steps.smoke.outputs.code }} backfill=${{ steps.backfill.outputs.code }}"
-          test "${{ steps.smoke.outputs.code }}" = "0" && test "${{ steps.backfill.outputs.code }}" = "0"
+          echo "smoke=${SMOKE_CODE} backfill=${BACKFILL_CODE}"
+          test "${SMOKE_CODE}" = "0" && test "${BACKFILL_CODE}" = "0"

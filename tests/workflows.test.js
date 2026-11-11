@@ -27,6 +27,7 @@ test('workflowi: skupna skupina concurrency, cron, vrata, brez commitov na main'
   assert.match(c, /actions\/upload-pages-artifact@v4/);
   assert.match(c, /actions\/deploy-pages@v4/);
   assert.match(c, /CONTACT_EMAIL: \$\{\{ secrets\.CONTACT_EMAIL \}\}/);
+  assert.ok(!/configure-pages/.test(c), 'configure-pages ni potreben');
   const b = wf('backfill.yml');
   assert.match(b, /publish:/);
   assert.match(b, /inputs\.publish && steps\.backfill\.outputs\.code == '0'/);
@@ -36,6 +37,33 @@ test('workflowi: skupna skupina concurrency, cron, vrata, brez commitov na main'
   assert.match(k, /gh api -X PUT "repos\/\$\{GITHUB_REPOSITORY\}\/actions\/workflows\/\$\{wf\}\/enable"/);
   assert.match(k, /for wf in collect\.yml keepalive\.yml/);
   assert.match(k, /npm run --silent calibrate/);
+});
+
+test('varnost javnega repozitorija: brez pull_request*, secrets samo v potrebnih korakih, najmanjše pravice', () => {
+  for (const name of ['collect.yml', 'backfill.yml', 'keepalive.yml']) {
+    const y = wf(name);
+    assert.ok(!/pull_request/.test(y), `${name}: brez pull_request / pull_request_target`);
+    assert.match(y, /^on:\n(  (schedule|workflow_dispatch):[\s\S]*?)\n\n/m, `${name}: samo schedule/workflow_dispatch`);
+    assert.ok(!/^    env:\n(      .*\n)*?      [A-Z_]+: \$\{\{ secrets\./m.test(y), `${name}: secrets niso na ravni joba`);
+    // korak: »      - run:« ali »        run:« (ne izhod joba »outputs: run:«); v run ni nobenega ${{ … }}
+    const runLines = y.split('\n').filter((l) => /^(      - |        )run: /.test(l));
+    assert.ok(runLines.length > 0);
+    for (const l of runLines) assert.ok(!/\$\{\{/.test(l), `${name}: brez izrazov v run: ${l}`);
+    const runBlocks = y.split(/\n(?:      - |        )run: \|\n/).slice(1).map((b) => b.split(/\n(?! {10})/)[0]);
+    for (const b of runBlocks) assert.ok(!/\$\{\{/.test(b), `${name}: brez izrazov v večvrstičnem run`);
+    assert.match(y, /npm ci --ignore-scripts/, `${name}: npm ci brez namestitvenih skript`);
+  }
+  for (const name of ['collect.yml', 'backfill.yml']) {
+    const y = wf(name);
+    const steps = y.split(/\n      - /).filter((st) => /secrets\./.test(st));
+    for (const st of steps) assert.match(st, /npm run --silent (collect|smoke|backfill)/, `${name}: secrets samo v korakih zbiralnika/smoke/backfill`);
+  }
+  const c = wf('collect.yml');
+  assert.match(c, /^permissions:\n  contents: read\n/m, 'collect: privzeto samo branje');
+  assert.match(c, /  collect:[\s\S]*?permissions:\n      contents: write/);
+  assert.match(c, /  deploy:[\s\S]*?permissions:\n      pages: write[^\n]*\n      id-token: write/);
+  assert.match(wf('backfill.yml'), /^permissions:\n  contents: write\n/m);
+  assert.match(wf('keepalive.yml'), /^permissions:\n  contents: write\n  actions: write\n/m);
 });
 
 test('index.html: noindex za GitHub Pages', () => {

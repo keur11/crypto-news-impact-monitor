@@ -16,10 +16,9 @@ on:
         type: boolean
         default: false
 
+# Najmanjše pravice: privzeto samo branje; vsak job zahteva le, kar potrebuje.
 permissions:
-  contents: write   # veja data
-  pages: write      # objava na Pages
-  id-token: write   # objava na Pages
+  contents: read
 
 # Ena skupina za vse workflowe, ki pišejo stanje (zbiralnik, backfill, keepalive): teki se ne prekrivajo.
 concurrency:
@@ -30,11 +29,10 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write   # objava stanja na vejo data
     outputs:
       run: ${{ steps.gate.outputs.run }}
-    env:
-      CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
-      COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,7 +67,7 @@ jobs:
           cache: npm
 
       - if: steps.gate.outputs.run == 'true'
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - if: steps.gate.outputs.run == 'true'
         name: Obnovi predpomnilnik cen
@@ -83,6 +81,10 @@ jobs:
 
       - if: steps.gate.outputs.run == 'true'
         name: Tek zbiralnika
+        # Secrets samo v tem koraku (ne v npm ci ali drugih korakih).
+        env:
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+          COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
         run: npm run --silent collect
 
       - if: steps.gate.outputs.run == 'true' && always()
@@ -106,9 +108,6 @@ jobs:
           cp -R data site/data
 
       - if: steps.gate.outputs.run == 'true'
-        uses: actions/configure-pages@v5
-
-      - if: steps.gate.outputs.run == 'true'
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
@@ -117,6 +116,9 @@ jobs:
     needs: collect
     if: needs.collect.outputs.run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write      # objava na Pages
+      id-token: write   # preverjanje izvora objave (OIDC)
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
