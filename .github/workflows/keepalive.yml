@@ -1,0 +1,72 @@
+# Mesečno vzdrževanje:
+#  1. Ponovno omogoči načrtovane workflowe prek REST API (PUT /repos/{owner}/{repo}/actions/workflows/{id}/enable),
+#     da jih GitHub po 60 dneh brez aktivnosti v javnem repozitoriju ne izklopi. Brez praznih commitov na main.
+#     Rezultat se zapiše v data/keepalive.json; zbiralnik ob neuspehu ali zastaranju (> 35 dni) doda opozorilo
+#     v status.json in dashboard.
+#  2. Kalibracija (npm run calibrate) → data/calibration.json (predlog uteži se ne uveljavi samodejno).
+name: Vzdrževanje (keepalive + kalibracija)
+
+on:
+  schedule:
+    - cron: '23 4 1 * *'   # 1. v mesecu ob 04:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write   # veja data
+  actions: write    # ponovno omogočanje workflowov
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Obnovi stanje z veje data
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin data
+            git checkout FETCH_HEAD -- data
+            git reset -q
+          fi
+          mkdir -p data
+
+      - name: Ponovno omogoči načrtovane workflowe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ok=true
+          results=""
+          for wf in collect.yml keepalive.yml; do
+            if out=$(gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${wf}/enable" 2>&1); then
+              results="${results}${wf}=ok;"
+            else
+              ok=false
+              results="${results}${wf}=napaka: $(echo "$out" | tr '\n' ' ' | cut -c1-200);"
+            fi
+          done
+          OK="$ok" RESULTS="$results" node -e '
+            const fs = require("fs");
+            const doc = { at: new Date().toISOString(), ok: process.env.OK === "true", results: process.env.RESULTS, runId: process.env.GITHUB_RUN_ID };
+            fs.writeFileSync("data/keepalive.json", JSON.stringify(doc, null, 2) + "\n");
+            console.log(JSON.stringify(doc));'
+          if [ "$ok" != "true" ]; then echo "::warning title=Keepalive::Ponovno omogočanje ni uspelo: ${results}"; fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Kalibracija
+        run: npm run --silent calibrate
+
+      - name: Objavi na vejo data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-data-branch.sh "vzdrževanje"

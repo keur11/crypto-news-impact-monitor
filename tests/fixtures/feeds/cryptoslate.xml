@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fikstura: naslovi, povezave in pubDate dobesedno iz živega feeda (zajem 2026-11-02 ); opisi izpuščeni. -->
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CryptoSlate</title>
+    <link>https://cryptoslate.com</link>
+    <description>CryptoSlate</description>
+    <item>
+      <title>Tracked Binance wallets record $2.5 billion in outflows as withdrawals reopen after hack</title>
+      <link>https://cryptoslate.com/tracked-binance-wallets-record-2-5-billion-in-outflows-as-withdrawals-reopen-after-hack/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/tracked-binance-wallets-record-2-5-billion-in-outflows-as-withdrawals-reopen-after-hack/</guid>
+      <pubDate>Sun, 01 Nov 2026 21:00:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>Crypto scammers used SEC&#8217;s website to lure investors into alleged $130 million fraud</title>
+      <link>https://cryptoslate.com/crypto-scammers-used-secs-website-to-lure-investors-into-alleged-130-million-fraud/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/crypto-scammers-used-secs-website-to-lure-investors-into-alleged-130-million-fraud/</guid>
+      <pubDate>Sun, 01 Nov 2026 20:00:49 +0000</pubDate>
+    </item>
+    <item>
+      <title>Cursor urges credential resets after malicious Claude Code marketplace update</title>
+      <link>https://cryptoslate.com/cursor-urges-credential-resets-after-malicious-claude-code-marketplace-update/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/cursor-urges-credential-resets-after-malicious-claude-code-marketplace-update/</guid>
+      <pubDate>Sun, 01 Nov 2026 18:40:09 +0000</pubDate>
+    </item>
+    <item>
+      <title>Bitcoin redemption freeze puts $136 million Aave market under scrutiny</title>
+      <link>https://cryptoslate.com/bitcoin-redemption-freeze-puts-136-million-aave-market-under-scrutiny/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/bitcoin-redemption-freeze-puts-136-million-aave-market-under-scrutiny/</guid>
+      <pubDate>Sun, 01 Nov 2026 17:40:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>OneKey founder warns BlackRock’s Bitcoin ETF could be a North Korean target</title>
+      <link>https://cryptoslate.com/onekey-founder-warns-blackrocks-bitcoin-etf-could-be-a-north-korean-target/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/onekey-founder-warns-blackrocks-bitcoin-etf-could-be-a-north-korean-target/</guid>
+      <pubDate>Sun, 01 Nov 2026 16:30:46 +0000</pubDate>
+    </item>
+    <item>
+      <title>Japan’s central bank will sell ETFs 2.6 times faster and could still take 43 years to exit</title>
+      <link>https://cryptoslate.com/japans-central-bank-will-sell-etfs-2-6-times-faster-and-could-still-take-43-years-to-exit/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/japans-central-bank-will-sell-etfs-2-6-times-faster-and-could-still-take-43-years-to-exit/</guid>
+      <pubDate>Sun, 01 Nov 2026 15:30:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>Ethereum validators pocket $30 million windfall as Binance hackers lose $119 million in rushed trades</title>
+      <link>https://cryptoslate.com/ethereum-validators-pocket-30-million-windfall-as-binance-hackers-lose-119-million-in-rushed-trades/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/ethereum-validators-pocket-30-million-windfall-as-binance-hackers-lose-119-million-in-rushed-trades/</guid>
+      <pubDate>Sun, 01 Nov 2026 14:20:12 +0000</pubDate>
+    </item>
+    <item>
+      <title>Zero-token withdrawals let a hacker drain 97 million CORE from Bitcoin staking platform b14g</title>
+      <link>https://cryptoslate.com/zero-token-withdrawals-let-a-hacker-drain-97-million-core-from-bitcoin-staking-platform-b14g/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/zero-token-withdrawals-let-a-hacker-drain-97-million-core-from-bitcoin-staking-platform-b14g/</guid>
+      <pubDate>Sun, 01 Nov 2026 13:20:52 +0000</pubDate>
+    </item>
+    <item>
+      <title>FBI blames North Korea for $6 billion Binance hack, urges THORChain to block stolen funds</title>
+      <link>https://cryptoslate.com/fbi-blames-north-korea-for-6-billion-binance-hack-urges-thorchain-to-block-stolen-funds/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/fbi-blames-north-korea-for-6-billion-binance-hack-urges-thorchain-to-block-stolen-funds/</guid>
+      <pubDate>Sun, 01 Nov 2026 12:20:43 +0000</pubDate>
+    </item>
+    <item>
+      <title>AI wants Bitcoin miners&#8217; power, but the contracts reveal who really gets paid</title>
+      <link>https://cryptoslate.com/ai-wants-bitcoin-miners-power-but-the-contracts-reveal-who-really-gets-paid/</link>
+      <guid isPermaLink="false">https://cryptoslate.com/ai-wants-bitcoin-miners-power-but-the-contracts-reveal-who-really-gets-paid/</guid>
+      <pubDate>Sun, 01 Nov 2026 11:20:22 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

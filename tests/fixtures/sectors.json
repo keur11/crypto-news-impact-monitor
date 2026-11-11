@@ -1,0 +1,52 @@
+{
+  "_note": "SINTETIČNA testna fikstura v obliki data/sectors.json. Kovanci in kategorije so resnični, tržne kapitalizacije so zaokrožene ponazoritve, ne zajem API-ja.",
+  "fetchedAt": "2026-11-02T00:00:00Z",
+  "categories": {
+    "decentralized-finance-defi": { "valid": true, "name": "Decentralized Finance (DeFi)" },
+    "layer-2": { "valid": true, "name": "Layer 2 (L2)" },
+    "centralized-exchange-token-cex": { "valid": true, "name": "Centralized Exchange (CEX) Token" },
+    "solana-ecosystem": { "valid": true, "name": "Solana Ecosystem" }
+  },
+  "sectors": [
+    {
+      "id": "decentralized-finance-defi",
+      "name": "DeFi",
+      "coins": [
+        { "id": "chainlink", "symbol": "LINK", "name": "Chainlink", "marketCap": 9000000000, "marketCapRank": 15 },
+        { "id": "hyperliquid", "symbol": "HYPE", "name": "Hyperliquid", "marketCap": 12000000000, "marketCapRank": 12 },
+        { "id": "uniswap", "symbol": "UNI", "name": "Uniswap", "marketCap": 5000000000, "marketCapRank": 25 },
+        { "id": "aave", "symbol": "AAVE", "name": "Aave", "marketCap": 4000000000, "marketCapRank": 30 },
+        { "id": "thorchain", "symbol": "RUNE", "name": "THORChain", "marketCap": 500000000, "marketCapRank": 120 },
+        { "id": "curve-dao-token", "symbol": "CRV", "name": "Curve DAO", "marketCap": 400000000, "marketCapRank": 130 },
+        { "id": "coredaoorg", "symbol": "CORE", "name": "Core", "marketCap": 300000000, "marketCapRank": 150 }
+      ]
+    },
+    {
+      "id": "layer-2",
+      "name": "Layer 2",
+      "coins": [
+        { "id": "polygon-ecosystem-token", "symbol": "POL", "name": "POL (ex-MATIC)", "marketCap": 2000000000, "marketCapRank": 50 },
+        { "id": "arbitrum", "symbol": "ARB", "name": "Arbitrum", "marketCap": 1500000000, "marketCapRank": 60 },
+        { "id": "optimism", "symbol": "OP", "name": "Optimism", "marketCap": 1000000000, "marketCapRank": 70 }
+      ]
+    },
+    {
+      "id": "centralized-exchange-token-cex",
+      "name": "Žetoni borz (CEX)",
+      "coins": [
+        { "id": "binancecoin", "symbol": "BNB", "name": "BNB", "marketCap": 90000000000, "marketCapRank": 5 },
+        { "id": "ftx-token", "symbol": "FTT", "name": "FTX", "marketCap": 200000000, "marketCapRank": 200 }
+      ]
+    },
+    {
+      "id": "solana-ecosystem",
+      "name": "Solana",
+      "coins": [
+        { "id": "solana", "symbol": "SOL", "name": "Solana", "marketCap": 80000000000, "marketCapRank": 6 },
+        { "id": "jupiter-exchange-solana", "symbol": "JUP", "name": "Jupiter", "marketCap": 1500000000, "marketCapRank": 65 }
+      ]
+    }
+  ],
+  "stablecoinIds": ["tether", "usd-coin"],
+  "excludedCount": 4
+}

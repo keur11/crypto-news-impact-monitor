@@ -1,0 +1,1161 @@
+{
+  "app": {
+    "name": "Crypto News Impact Monitor",
+    "version": "0.6.0",
+    "userAgent": "CryptoNewsImpactMonitor/0.6 (news impact analytics; no trading)",
+    "contactEnv": "CONTACT_EMAIL",
+    "secretEnvs": [
+      "CONTACT_EMAIL",
+      "COINGECKO_DEMO_API_KEY"
+    ]
+  },
+  "paths": {
+    "libraryInput": "config/library.json",
+    "libraryOutput": "data/library.json",
+    "seriesDir": "data/series",
+    "backfillLog": "data/backfill-log.json",
+    "articles": "data/articles.json",
+    "events": "data/events.json",
+    "sectors": "data/sectors.json",
+    "status": "data/status.json",
+    "sectorsHistory": "data/sectors-history.json",
+    "archive": "data/confirmed-archive.json",
+    "calibration": "data/calibration.json",
+    "marketState": "data/market-state.json",
+    "stories": "data/stories.json",
+    "bundle": "data/bundle.js",
+    "keepalive": "data/keepalive.json"
+  },
+  "http": {
+    "timeoutMs": 20000,
+    "maxAttempts": 3,
+    "backoffBaseMs": 1000,
+    "backoffMaxMs": 15000,
+    "retryOn": [
+      429,
+      500,
+      502,
+      503,
+      504
+    ]
+  },
+  "cache": {
+    "dir": "cache/prices",
+    "immutableAfterMs": 86400000
+  },
+  "providers": {
+    "binanceApi": {
+      "baseUrl": "https://data-api.binance.vision",
+      "klinesPath": "/api/v3/klines",
+      "maxLimit": 1000,
+      "minIntervalMs": 250
+    },
+    "binanceArchive": {
+      "baseUrl": "https://data.binance.vision",
+      "pathTemplate": "/data/spot/monthly/klines/{symbol}/{interval}/{symbol}-{interval}-{yyyy}-{mm}.zip",
+      "verifyChecksum": true,
+      "minIntervalMs": 250
+    },
+    "bitstamp": {
+      "baseUrl": "https://www.bitstamp.net",
+      "ohlcPath": "/api/v2/ohlc/{pair}/",
+      "maxLimit": 1000,
+      "minIntervalMs": 500
+    },
+    "coingecko": {
+      "baseUrl": "https://api.coingecko.com/api/v3",
+      "apiKeyEnv": "COINGECKO_DEMO_API_KEY",
+      "apiKeyHeader": "x-cg-demo-api-key",
+      "minIntervalMs": 2500,
+      "refreshHours": 24
+    },
+    "rss": {
+      "minIntervalMs": 0
+    }
+  },
+  "sources": [
+    {
+      "id": "coindesk",
+      "name": "CoinDesk",
+      "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+      "tier": 0.7,
+      "enabled": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "official": false
+    },
+    {
+      "id": "cointelegraph",
+      "name": "Cointelegraph",
+      "url": "https://cointelegraph.com/rss",
+      "tier": 0.7,
+      "enabled": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "official": false
+    },
+    {
+      "id": "decrypt",
+      "name": "Decrypt",
+      "url": "https://decrypt.co/feed",
+      "tier": 0.7,
+      "enabled": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "official": false
+    },
+    {
+      "id": "theblock",
+      "name": "The Block",
+      "url": "https://www.theblock.co/rss.xml",
+      "tier": 0.7,
+      "enabled": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "official": false
+    },
+    {
+      "id": "cryptoslate",
+      "name": "CryptoSlate",
+      "url": "https://cryptoslate.com/feed/",
+      "tier": 0.4,
+      "enabled": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "official": false
+    },
+    {
+      "id": "sec",
+      "name": "SEC – sporočila za javnost",
+      "url": "https://www.sec.gov/news/pressreleases.rss",
+      "tier": 1,
+      "enabled": true,
+      "requiresContact": true,
+      "verified": {
+        "on": "2026-11-02",
+        "format": "RSS 2.0"
+      },
+      "note": "SEC zahteva User-Agent s kontaktom (Fair Access); brez CONTACT_EMAIL je vir preskočen.",
+      "official": true
+    },
+    {
+      "id": "blockworks",
+      "name": "Blockworks",
+      "url": "https://blockworks.co/feed",
+      "tier": 0.7,
+      "enabled": false,
+      "note": "Feed se naloži, a po navedbah Feeder.co od januarja 2026 nima novih zgodb.",
+      "official": false
+    },
+    {
+      "id": "thedefiant",
+      "name": "The Defiant",
+      "url": "https://thedefiant.io/api/feed",
+      "tier": 0.7,
+      "enabled": false,
+      "note": "Ni preverjen: strežnik blokira samodejno branje za preverjanje. URL je iz PR tretje osebe (2026-10-31). Preveri ga smoke workflow; vklopi po potrditvi.",
+      "official": false
+    }
+  ],
+  "sectors": {
+    "topN": 30,
+    "fetchPerPage": 100,
+    "list": [
+      {
+        "id": "decentralized-finance-defi",
+        "name": "DeFi"
+      },
+      {
+        "id": "layer-2",
+        "name": "Layer 2"
+      },
+      {
+        "id": "artificial-intelligence",
+        "name": "Umetna inteligenca"
+      },
+      {
+        "id": "meme-token",
+        "name": "Meme"
+      },
+      {
+        "id": "centralized-exchange-token-cex",
+        "name": "Žetoni borz (CEX)"
+      },
+      {
+        "id": "solana-ecosystem",
+        "name": "Solana"
+      }
+    ],
+    "libraryOnly": [
+      "stablecoins",
+      "layer-1",
+      "proof-of-work-pow"
+    ],
+    "exclude": {
+      "stablecoinCategory": "stablecoins",
+      "stablecoinFetchPerPage": 250,
+      "symbols": [
+        "WBTC",
+        "WETH",
+        "STETH",
+        "WSTETH",
+        "CBBTC",
+        "WBETH",
+        "WEETH",
+        "RETH",
+        "JITOSOL",
+        "MSOL",
+        "BNSOL",
+        "JUPSOL",
+        "USDS",
+        "USDE",
+        "SUSDE"
+      ],
+      "namePattern": "^(Wrapped|Bridged)\\b|\\b(Staked|Liquid Staked|Restaked)\\b"
+    },
+    "historyDays": 21,
+    "marketFetchPerPage": 60,
+    "marketTopN": 30
+  },
+  "entities": {
+    "static": [
+      {
+        "symbol": "BTC",
+        "names": [
+          "Bitcoin"
+        ]
+      },
+      {
+        "symbol": "ETH",
+        "names": [
+          "Ethereum",
+          "Ether"
+        ]
+      },
+      {
+        "symbol": "BNB",
+        "names": [
+          "Binance",
+          "BNB Chain"
+        ]
+      },
+      {
+        "symbol": "SOL",
+        "names": [
+          "Solana"
+        ]
+      },
+      {
+        "symbol": "FTT",
+        "names": [
+          "FTX"
+        ]
+      }
+    ],
+    "synonyms": {
+      "BNB": [
+        "Binance"
+      ],
+      "FTT": [
+        "FTX"
+      ],
+      "ETH": [
+        "Ether"
+      ],
+      "POL": [
+        "Polygon"
+      ],
+      "CRV": [
+        "Curve Finance"
+      ]
+    },
+    "tickerStopList": [
+      "AI",
+      "ONE",
+      "IT",
+      "ME",
+      "US",
+      "USA",
+      "UK",
+      "EU",
+      "CEO",
+      "CFO",
+      "SEC",
+      "ETF",
+      "ETFS",
+      "ETP",
+      "IPO",
+      "CEX",
+      "DEX",
+      "NFT",
+      "DAO",
+      "API",
+      "TVL",
+      "ATH",
+      "FBI",
+      "CFTC",
+      "GDP",
+      "CPI",
+      "FOMC",
+      "FED",
+      "OK",
+      "NEW",
+      "NOW",
+      "BIG",
+      "TOP",
+      "BEST",
+      "FREE",
+      "HIGH",
+      "MORE",
+      "JUST",
+      "OPEN",
+      "TRUMP"
+    ],
+    "ambiguousNames": [
+      "Near",
+      "Render",
+      "Maker",
+      "Core",
+      "Sonic",
+      "Stellar",
+      "Official",
+      "Story",
+      "Movement",
+      "Pump",
+      "Virtual",
+      "Fetch",
+      "Grass",
+      "Sky",
+      "Base",
+      "Blast",
+      "Scroll",
+      "Mode",
+      "Immutable",
+      "Mantle",
+      "Jupiter",
+      "Celo",
+      "Gas",
+      "Flow",
+      "Theta",
+      "Kaia",
+      "Aria",
+      "Zero",
+      "Unity",
+      "Fartcoin",
+      "Treasure"
+    ],
+    "maxMainEntities": 5,
+    "mainEntityMinShare": 0.5,
+    "aliases": {
+      "NEAR": [
+        "NEAR Protocol",
+        "Near Protocol"
+      ],
+      "RENDER": [
+        "Render Network"
+      ],
+      "CORE": [
+        "Core DAO",
+        "CoreDAO"
+      ],
+      "S": [
+        "Sonic Labs"
+      ],
+      "XLM": [
+        "Stellar Lumens",
+        "Stellar network",
+        "Stellar blockchain"
+      ],
+      "MNT": [
+        "Mantle Network"
+      ],
+      "JUP": [
+        "Jupiter Exchange",
+        "Jupiter DEX"
+      ],
+      "IMX": [
+        "Immutable X",
+        "Immutable zkEVM"
+      ]
+    },
+    "background": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "actors": [
+    {
+      "id": "@SEC",
+      "label": "SEC",
+      "kind": "regulator",
+      "names": [
+        "SEC",
+        "Securities and Exchange Commission"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@CFTC",
+      "label": "CFTC",
+      "kind": "regulator",
+      "names": [
+        "CFTC",
+        "Commodity Futures Trading Commission"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@FBI",
+      "label": "FBI",
+      "kind": "authority",
+      "names": [
+        "FBI",
+        "Federal Bureau of Investigation"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@DOJ",
+      "label": "DOJ",
+      "kind": "authority",
+      "names": [
+        "DOJ",
+        "Department of Justice",
+        "Justice Department"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@OFAC",
+      "label": "OFAC",
+      "kind": "regulator",
+      "names": [
+        "OFAC",
+        "Office of Foreign Assets Control"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@FED",
+      "label": "Fed",
+      "kind": "central_bank",
+      "names": [
+        "Federal Reserve",
+        "Fed",
+        "FOMC"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@CN_REGULATORS",
+      "label": "Kitajski regulatorji",
+      "kind": "regulator",
+      "names": [
+        "PBoC",
+        "People's Bank of China",
+        "State Council",
+        "CSRC"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@NORTH_KOREA",
+      "label": "Severna Koreja / Lazarus",
+      "kind": "group",
+      "names": [
+        "Lazarus",
+        "Lazarus Group",
+        "North Korea",
+        "North Korean",
+        "DPRK",
+        "TraderTraitor"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@COINBASE",
+      "label": "Coinbase",
+      "kind": "exchange",
+      "names": [
+        "Coinbase"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@KRAKEN",
+      "label": "Kraken",
+      "kind": "exchange",
+      "names": [
+        "Kraken"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@BYBIT",
+      "label": "Bybit",
+      "kind": "exchange",
+      "names": [
+        "Bybit"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@ROBINHOOD",
+      "label": "Robinhood",
+      "kind": "exchange",
+      "names": [
+        "Robinhood"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@POLYMARKET",
+      "label": "Polymarket",
+      "kind": "protocol",
+      "names": [
+        "Polymarket"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@CIRCLE",
+      "label": "Circle",
+      "kind": "issuer",
+      "names": [
+        "Circle"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@TETHER",
+      "label": "Tether",
+      "kind": "issuer",
+      "names": [
+        "Tether"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@CHAINALYSIS",
+      "label": "Chainalysis",
+      "kind": "company",
+      "names": [
+        "Chainalysis"
+      ],
+      "crypto": true
+    },
+    {
+      "id": "@BLACKROCK",
+      "label": "BlackRock",
+      "kind": "asset_manager",
+      "names": [
+        "BlackRock"
+      ],
+      "crypto": false
+    },
+    {
+      "id": "@STRATEGY",
+      "label": "Strategy (MSTR)",
+      "kind": "company",
+      "names": [
+        "MicroStrategy",
+        "MSTR"
+      ],
+      "crypto": false
+    }
+  ],
+  "classification": {
+    "priority": [
+      "hack",
+      "insolvency",
+      "protocol_failure",
+      "etf_institutional",
+      "regulation",
+      "listing",
+      "upgrade",
+      "tokenomics",
+      "partnership",
+      "macro"
+    ],
+    "keywords": {
+      "hack": [
+        "hack*",
+        "exploit*",
+        "drain*",
+        "stolen",
+        "breach*",
+        "vulnerabilit*",
+        "attacker*",
+        "cyberattack*",
+        "cybersecurity incident"
+      ],
+      "insolvency": [
+        "bankrupt*",
+        "insolven*",
+        "halts withdrawals",
+        "halted withdrawals",
+        "pauses withdrawals",
+        "suspends withdrawals",
+        "Chapter 11",
+        "liquidation proceedings",
+        "administration proceedings"
+      ],
+      "protocol_failure": [
+        "depeg*",
+        "de-peg*",
+        "collapse*",
+        "chain halt*",
+        "network halt*",
+        "halts block production",
+        "death spiral",
+        "outage"
+      ],
+      "etf_institutional": [
+        "ETF",
+        "ETFs",
+        "ETP",
+        "ETPs",
+        "spot ETF",
+        "BlackRock",
+        "Fidelity",
+        "treasury company",
+        "treasury firm",
+        "corporate treasury",
+        "treasury strategy"
+      ],
+      "regulation": [
+        "SEC",
+        "CFTC",
+        "MiCA",
+        "ban",
+        "bans",
+        "banned",
+        "lawsuit*",
+        "sues",
+        "sued",
+        "charge",
+        "charges",
+        "charged",
+        "license*",
+        "licence*",
+        "sanction*",
+        "regulator*",
+        "regulation*",
+        "probe",
+        "probes",
+        "indict*",
+        "settlement",
+        "enforcement",
+        "fraud"
+      ],
+      "listing": [
+        "lists",
+        "listed on",
+        "listing",
+        "listings",
+        "delist*"
+      ],
+      "upgrade": [
+        "upgrade*",
+        "hard fork",
+        "mainnet",
+        "testnet",
+        "network upgrade"
+      ],
+      "tokenomics": [
+        "unlock*",
+        "token burn",
+        "burns",
+        "burned",
+        "airdrop*",
+        "buyback*"
+      ],
+      "partnership": [
+        "partnership*",
+        "partners with",
+        "integrates",
+        "integration",
+        "collaborat*"
+      ],
+      "macro": [
+        "Fed",
+        "Federal Reserve",
+        "FOMC",
+        "CPI",
+        "inflation",
+        "rate cut*",
+        "rate hike*",
+        "interest rate*",
+        "tariff*",
+        "Powell",
+        "jobs report",
+        "nonfarm payrolls",
+        "recession"
+      ]
+    },
+    "negative": {
+      "hack": [
+        "reward hacking",
+        "growth hack*",
+        "life hack*"
+      ],
+      "regulation": [
+        "ban on short",
+        "charge up",
+        "charging"
+      ]
+    },
+    "titleWeight": 1,
+    "summaryWeight": 0.5,
+    "eventTypeWeighting": "tier",
+    "requireCryptoContext": [
+      "hack",
+      "insolvency",
+      "protocol_failure"
+    ]
+  },
+  "clustering": {
+    "windowHours": 12,
+    "cosineThreshold": 0.55,
+    "entityJaccardMin": 0.5,
+    "entityCosineMin": 0.25,
+    "requireTypeNotOther": true
+  },
+  "stories": {
+    "jaccardMin": 0.5,
+    "maxGapDays": 7,
+    "novelty": {
+      "first": 1,
+      "followUp": 0.5,
+      "escalation": 1
+    },
+    "escalation": [
+      {
+        "from": [
+          "hack"
+        ],
+        "to": "insolvency",
+        "label": "hack → insolvency"
+      },
+      {
+        "from": "*",
+        "to": "regulation",
+        "requireTargetsStoryPrimary": true,
+        "label": "→ regulation proti glavni entiteti"
+      },
+      {
+        "from": "*",
+        "to": "protocol_failure",
+        "label": "→ protocol_failure"
+      }
+    ],
+    "retentionDays": 30
+  },
+  "scoring": {
+    "exAnteWeights": {
+      "T": 0.3,
+      "C": 0.2,
+      "Q": 0.1,
+      "S": 0.15,
+      "A": 0.25
+    },
+    "typeDefaults": {
+      "insolvency": 0.8,
+      "protocol_failure": 0.8,
+      "hack": 0.6,
+      "regulation": 0.6,
+      "etf_institutional": 0.6,
+      "macro": 0.4,
+      "listing": 0.3,
+      "upgrade": 0.3,
+      "tokenomics": 0.3,
+      "partnership": 0.15,
+      "other": 0.1
+    },
+    "similarityWeights": {
+      "entities": 0.6,
+      "keywords": 0.4
+    },
+    "analogMinSim": 0.3,
+    "analogTopK": 3,
+    "exAnteWindowHours": 6,
+    "finalWeights": {
+      "exAnte": 0.3,
+      "exPost": 0.7
+    },
+    "phasesHours": [
+      24,
+      72
+    ],
+    "defaultTier": 0.4,
+    "fullSizeEntities": [
+      "BTC",
+      "ETH"
+    ],
+    "confounding": {
+      "btcAbsZ24": 3,
+      "macroWindowHours": 24
+    },
+    "sharedImpactWindowHours": 24,
+    "sectorIndex": {
+      "topN": 10,
+      "minMembers": 3,
+      "quote": "USDT"
+    },
+    "noPairRecheckHours": 168,
+    "colorThresholds": [
+      30,
+      60,
+      80
+    ],
+    "similarityTypeGate": true,
+    "marketIndex": {
+      "topN": 20,
+      "minMembers": 3,
+      "weights": "equal",
+      "label": "trg (top 20, enake uteži)"
+    }
+  },
+  "macroEvents": {
+    "sources": {
+      "fomc": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm (odločitev ob 14:00 ET; 2027 okvirno)",
+      "cpi": "https://www.bls.gov/schedule/news_release/cpi.htm (objava ob 8:30 ET)"
+    },
+    "note": "Časi v UTC z upoštevanjem ameriškega poletnega časa (2026: do 1. 11.; 2027: 14. 3. – 7. 11.). Seznam ročno dopolnjuj.",
+    "events": [
+      {
+        "at": "2026-10-28T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2026-11-10T13:30:00Z",
+        "label": "CPI ZDA (oktober 2026)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2026-12-09T19:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2026-12-10T13:30:00Z",
+        "label": "CPI ZDA (november 2026)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-01-13T13:30:00Z",
+        "label": "CPI ZDA (december 2026)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-01-27T19:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-02-11T13:30:00Z",
+        "label": "CPI ZDA (januar 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-03-10T13:30:00Z",
+        "label": "CPI ZDA (februar 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-03-17T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-04-13T12:30:00Z",
+        "label": "CPI ZDA (marec 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-04-28T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-05-12T12:30:00Z",
+        "label": "CPI ZDA (april 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-06-09T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-06-10T12:30:00Z",
+        "label": "CPI ZDA (maj 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-07-14T12:30:00Z",
+        "label": "CPI ZDA (junij 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-07-28T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-08-11T12:30:00Z",
+        "label": "CPI ZDA (julij 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-09-14T12:30:00Z",
+        "label": "CPI ZDA (avgust 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-09-15T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-10-14T12:30:00Z",
+        "label": "CPI ZDA (september 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-10-27T18:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-11-10T13:30:00Z",
+        "label": "CPI ZDA (oktober 2027)",
+        "kind": "cpi"
+      },
+      {
+        "at": "2027-12-08T19:00:00Z",
+        "label": "FOMC (odločitev)",
+        "kind": "fomc"
+      },
+      {
+        "at": "2027-12-10T13:30:00Z",
+        "label": "CPI ZDA (november 2027)",
+        "kind": "cpi"
+      }
+    ],
+    "minCoverageDays": 60
+  },
+  "calibration": {
+    "minConfirmed": 50,
+    "archiveDays": 400
+  },
+  "retention": {
+    "articleDays": 14,
+    "eventDays": 14
+  },
+  "activeSource": {
+    "lookbackHours": 24,
+    "minArticles": 1
+  },
+  "status": {
+    "staleRunHours": 2,
+    "libraryWarnings": {
+      "unmeasured": "Referenčna knjižnica ni izmerjena – ocene niso kalibrirane",
+      "partial": "Referenčna knjižnica je izmerjena le delno – ocene so kalibrirane omejeno"
+    },
+    "keepaliveMaxAgeDays": 35
+  },
+  "market": {
+    "benchmark": "BTC",
+    "estimationDays": 30,
+    "estimationGapDays": 1,
+    "libraryFetchBeforeDays": 35,
+    "libraryFetchAfterDays": 7,
+    "windowsHours": [
+      1,
+      24,
+      72
+    ],
+    "volumeWindowHours": 24,
+    "mWeights": {
+      "z24": 0.6,
+      "z72": 0.4
+    },
+    "volumeFactor": {
+      "k": 0.1,
+      "clipMin": 0,
+      "clipMax": 3
+    },
+    "minCoverage": {
+      "estimation": 0.8,
+      "event": 0.8
+    },
+    "minEstimationReturns": {
+      "1h": 240,
+      "1d": 20
+    },
+    "depegWindowHours": 72,
+    "seriesWindowDays": 7
+  },
+  "assets": {
+    "BTC": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceApi",
+          "symbol": "BTCUSDT",
+          "interval": "1h"
+        },
+        {
+          "provider": "bitstamp",
+          "pair": "btcusd",
+          "interval": "1h"
+        },
+        {
+          "provider": "bitstamp",
+          "pair": "btcusd",
+          "interval": "1d"
+        }
+      ]
+    },
+    "ETH": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceApi",
+          "symbol": "ETHUSDT",
+          "interval": "1h"
+        }
+      ]
+    },
+    "BNB": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceApi",
+          "symbol": "BNBUSDT",
+          "interval": "1h"
+        }
+      ]
+    },
+    "SOL": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceApi",
+          "symbol": "SOLUSDT",
+          "interval": "1h"
+        }
+      ]
+    },
+    "FTT": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceApi",
+          "symbol": "FTTUSDT",
+          "interval": "1h"
+        },
+        {
+          "provider": "binanceArchive",
+          "symbol": "FTTUSDT",
+          "interval": "1h"
+        }
+      ]
+    },
+    "LUNC": {
+      "isStablecoin": false,
+      "sources": [
+        {
+          "provider": "binanceArchive",
+          "symbol": "LUNAUSDT",
+          "interval": "1h",
+          "validTo": "2022-05-26T00:00:00Z",
+          "note": "Stari LUNA pred preimenovanjem v LUNC (Binance, 26. 5. 2022); ticker LUNA je nato prevzel nov žeton."
+        },
+        {
+          "provider": "binanceArchive",
+          "symbol": "LUNABUSD",
+          "interval": "1h",
+          "validTo": "2022-05-26T00:00:00Z",
+          "note": "Rezervni par za stari LUNA."
+        },
+        {
+          "provider": "binanceApi",
+          "symbol": "LUNCUSDT",
+          "interval": "1h",
+          "validFrom": "2022-05-30T09:30:00Z",
+          "note": "LUNC po ponovnem odprtju trgovanja; za maj 2022 ni uporaben."
+        }
+      ]
+    },
+    "USTC": {
+      "isStablecoin": true,
+      "peg": 1,
+      "sources": [
+        {
+          "provider": "binanceArchive",
+          "symbol": "USTUSDT",
+          "interval": "1h",
+          "validTo": "2022-05-26T00:00:00Z"
+        },
+        {
+          "provider": "binanceArchive",
+          "symbol": "USTBUSD",
+          "interval": "1h",
+          "validTo": "2022-05-26T00:00:00Z"
+        },
+        {
+          "provider": "binanceApi",
+          "symbol": "USTCUSDT",
+          "interval": "1h",
+          "validFrom": "2022-05-30T09:30:00Z"
+        }
+      ]
+    },
+    "USDT": {
+      "isStablecoin": true,
+      "peg": 1,
+      "sources": []
+    },
+    "USDC": {
+      "isStablecoin": true,
+      "peg": 1,
+      "sources": []
+    },
+    "DAI": {
+      "isStablecoin": true,
+      "peg": 1,
+      "sources": []
+    }
+  },
+  "acceptance": {
+    "largestImpact": {
+      "event": "luna_crash_2022",
+      "maxRankAbsAR72": 1,
+      "maxRankM72": 2
+    },
+    "informativeZ24": [
+      {
+        "event": "china_mining_ban_2021",
+        "asset": "BTC"
+      },
+      {
+        "event": "ftx_collapse_2022",
+        "asset": "BTC"
+      }
+    ]
+  }
+}

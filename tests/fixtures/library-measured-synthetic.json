@@ -1,0 +1,379 @@
+{
+  "_synthetic": "SINTETIČNA testna fikstura v obliki data/library.json. Vrednosti M so izmišljene za ročne izračune v testih in NISO rezultat backfilla.",
+  "schema": 1,
+  "refs": {
+    "M_ref24": 3,
+    "M_ref72": 4,
+    "n24": 5,
+    "n72": 5
+  },
+  "events": [
+    {
+      "id": "ftx_collapse_2022",
+      "title": "Propad FTX",
+      "t0": "2022-11-08T16:03:26Z",
+      "t0Precision": "hour",
+      "t0Source": {
+        "url": "https://twitter.com/SBF_FTX/status/1590012124864348160",
+        "method": "x_snowflake",
+        "tweetId": "1590012124864348160",
+        "timestampMs": 1667923406221,
+        "formula": "(1590012124864348160 >> 22) + 1288834974657 = 1667923406221 ms = 2022-11-08T16:03:26.221Z",
+        "corroboration": [
+          {
+            "url": "https://twitter.com/cz_binance/status/1590013613586411520",
+            "tweetId": "1590013613586411520",
+            "timestampMs": 1667923761160,
+            "note": "CZ potrdi nezavezujoč LOI za prevzem FTX.com (2022-11-08T16:09:21.160Z)"
+          }
+        ]
+      },
+      "t0Note": "Prva javna objava prevzema s strani Binance (nit SBF). Zadnja odhodna transakcija FTX ob 11:37Z je naknadna rekonstrukcija (NBC) in je zato mejnik.",
+      "milestones": [
+        {
+          "date": "2022-11-02",
+          "label": "Poročilo CoinDesk o bilanci Alameda Research",
+          "affectsEstimation": true
+        },
+        {
+          "date": "2022-11-06",
+          "label": "Binance napove prodajo FTT",
+          "affectsEstimation": true
+        },
+        {
+          "date": "2022-11-08T11:37:00Z",
+          "label": "Zadnja odhodna transakcija FTX (de facto ustavitev dvigov; naknadna rekonstrukcija)",
+          "source": "https://www.nbcnews.com/tech/tech-news/binance-ftx-acquire-crypto-rcna56266"
+        },
+        {
+          "date": "2022-11-08T16:03:26Z",
+          "label": "Binance in FTX objavita prevzem (t0)"
+        },
+        {
+          "date": "2022-11-09",
+          "label": "Binance odstopi od prevzema"
+        },
+        {
+          "date": "2022-11-11",
+          "label": "Stečaj (Chapter 11)"
+        }
+      ],
+      "confounders": [
+        {
+          "date": "2022-11-10",
+          "label": "Objava CPI ZDA za oktober 2022 (v oknu 72 h)",
+          "affectsEstimation": false
+        }
+      ],
+      "type": "insolvency",
+      "primaryAsset": "FTT",
+      "assets": [
+        "FTT",
+        "SOL",
+        "BTC",
+        "ETH"
+      ],
+      "sectors": [
+        "centralized-exchange-token-cex",
+        "solana-ecosystem"
+      ],
+      "keywords": [
+        "FTX",
+        "Alameda",
+        "Bankman-Fried",
+        "SBF",
+        "FTT"
+      ],
+      "actors": [],
+      "measured": {
+        "primaryAsset": "FTT",
+        "primaryStatus": "ok",
+        "primaryReason": null,
+        "M24": 6,
+        "M72": 8,
+        "AR24": -0.1,
+        "AR72": -0.2,
+        "direction": -1,
+        "relative": {
+          "M24": 2,
+          "M72": 2
+        },
+        "assets": {}
+      }
+    },
+    {
+      "id": "luna_crash_2022",
+      "title": "Zlom LUNA/UST",
+      "t0": "2022-05-09T00:00:00Z",
+      "t0Precision": "day",
+      "t0Source": null,
+      "t0Note": "Vir z uro glavnega šoka ni potrjen; zlom je potekal več dni (9.–13. 5.).",
+      "milestones": [
+        {
+          "date": "2022-05-07",
+          "label": "UST izgubi vezavo (7.–8. 5.)",
+          "affectsEstimation": true
+        },
+        {
+          "date": "2022-05-09",
+          "label": "Začetek zloma LUNA (9.–13. 5.)"
+        },
+        {
+          "date": "2022-05-12",
+          "label": "Ustavitev verige Terra"
+        }
+      ],
+      "confounders": [
+        {
+          "date": "2022-05-04",
+          "label": "Odločitev FOMC (+50 bt)",
+          "affectsEstimation": false
+        },
+        {
+          "date": "2022-05-11",
+          "label": "Objava CPI ZDA za april 2022 (v oknu 72 h)",
+          "affectsEstimation": false
+        }
+      ],
+      "type": "protocol_failure",
+      "primaryAsset": "LUNC",
+      "assets": [
+        "LUNC",
+        "USTC",
+        "BTC",
+        "ETH"
+      ],
+      "sectors": [
+        "stablecoins",
+        "decentralized-finance-defi",
+        "layer-1"
+      ],
+      "keywords": [
+        "Terra",
+        "LUNA",
+        "UST",
+        "Do Kwon",
+        "Anchor",
+        "depeg"
+      ],
+      "actors": [],
+      "measured": {
+        "primaryAsset": "LUNC",
+        "primaryStatus": "ok",
+        "primaryReason": null,
+        "M24": 9,
+        "M72": 12,
+        "AR24": -0.1,
+        "AR72": -0.2,
+        "direction": -1,
+        "relative": {
+          "M24": 3,
+          "M72": 3
+        },
+        "assets": {}
+      }
+    },
+    {
+      "id": "china_mining_ban_2021",
+      "title": "Kitajska prepoved rudarjenja",
+      "t0": "2021-05-21T14:00:00Z",
+      "t0Precision": "hour",
+      "t0Source": {
+        "url": "https://www.gov.cn/xinwen/2021-05/21/content_5610192.htm",
+        "method": "publication_time",
+        "publishedLocal": "2021-05-21 22:00 (Asia/Shanghai, UTC+8)",
+        "corroboration": [
+          {
+            "url": "https://www.theblock.co/post/105708/china-bitcoin-crackdown-usdt-otc",
+            "note": "»The State Council published the minutes ... at 10:00 pm on Friday China time«"
+          }
+        ]
+      },
+      "t0Note": "Sporočilo 51. seje Odbora za finančno stabilnost in razvoj pri Državnem svetu (»打击比特币挖矿和交易行为«), objavljeno na gov.cn.",
+      "milestones": [
+        {
+          "date": "2021-05-21T14:00:00Z",
+          "label": "Državni svet napove ukrepe proti rudarjenju in trgovanju (t0)"
+        },
+        {
+          "date": "2021-06-18",
+          "label": "Sečuan zapre rudnike (18.–20. 6.)"
+        },
+        {
+          "date": "2021-09-24",
+          "label": "PBoC razglasi vse kripto transakcije za nezakonite"
+        }
+      ],
+      "confounders": [
+        {
+          "date": "2021-05-12",
+          "label": "Tesla preneha sprejemati plačila v BTC",
+          "affectsEstimation": true
+        },
+        {
+          "date": "2021-05-18",
+          "label": "Kitajsko obvestilo finančnim institucijam; zlom BTC 19. 5.",
+          "affectsEstimation": true
+        }
+      ],
+      "type": "regulation",
+      "primaryAsset": "BTC",
+      "assets": [
+        "BTC",
+        "ETH"
+      ],
+      "sectors": [
+        "proof-of-work-pow"
+      ],
+      "keywords": [
+        "China",
+        "mining",
+        "ban",
+        "crackdown",
+        "State Council",
+        "Liu He"
+      ],
+      "actors": [
+        "@CN_REGULATORS"
+      ],
+      "measured": {
+        "primaryAsset": "BTC",
+        "primaryStatus": "ok",
+        "primaryReason": null,
+        "M24": 1.5,
+        "M72": 2,
+        "AR24": -0.1,
+        "AR72": -0.2,
+        "direction": -1,
+        "relative": {
+          "M24": 0.5,
+          "M72": 0.5
+        },
+        "assets": {}
+      }
+    },
+    {
+      "id": "binance_hack_2019",
+      "title": "Hekerski napad na Binance",
+      "t0": "2019-05-07T23:34:00Z",
+      "t0Precision": "hour",
+      "t0Source": {
+        "url": "https://www.binance.com/en/support/announcement/binance-security-breach-update-360028031711",
+        "method": "publication_time",
+        "publishedLocal": "2019-05-07 23:34 (časovni pas na strani ni naveden)",
+        "corroboration": [
+          {
+            "url": "https://www.theblock.co/news/regulation/2019-05-07-security-breach-on-binance-results-in-a-loss-of-7000-btc-22448",
+            "note": "The Block objavi novico ob 23:54:30 UTC, kar je skladno z 23:34 UTC"
+          }
+        ]
+      },
+      "t0Note": "Prva javna objava vdora. Predhodni tweet CZ ob 19:06Z je omenjal le nenačrtovano vzdrževanje, ne vdora.",
+      "milestones": [
+        {
+          "date": "2019-05-07T17:15:24Z",
+          "label": "Vdor v hot wallet (~7.000 BTC)",
+          "source": "https://www.binance.com/en/support/announcement/binance-security-breach-update-360028031711"
+        },
+        {
+          "date": "2019-05-07T19:06:23Z",
+          "label": "CZ: nenačrtovano vzdrževanje strežnikov (brez omembe vdora)",
+          "source": "https://twitter.com/cz_binance/status/1125839310891053057",
+          "derivation": "(1125839310891053057 >> 22) + 1288834974657 = 1557255983456 ms = 2019-05-07T19:06:23.456Z"
+        },
+        {
+          "date": "2019-05-07T23:34:00Z",
+          "label": "Objava vdora; dvigi ustavljeni (t0)"
+        }
+      ],
+      "confounders": [],
+      "type": "hack",
+      "primaryAsset": "BNB",
+      "assets": [
+        "BNB",
+        "BTC"
+      ],
+      "sectors": [
+        "centralized-exchange-token-cex"
+      ],
+      "keywords": [
+        "Binance",
+        "hack",
+        "hot wallet",
+        "SAFU",
+        "withdrawals suspended"
+      ],
+      "actors": [],
+      "measured": {
+        "primaryAsset": "BNB",
+        "primaryStatus": "ok",
+        "primaryReason": null,
+        "M24": 3,
+        "M72": 4,
+        "AR24": -0.1,
+        "AR72": -0.2,
+        "direction": -1,
+        "relative": {
+          "M24": 1,
+          "M72": 1
+        },
+        "assets": {}
+      }
+    },
+    {
+      "id": "mtgox_2014",
+      "title": "Bankrot Mt. Gox",
+      "t0": "2014-02-24T00:00:00Z",
+      "t0Precision": "day",
+      "t0Source": null,
+      "t0Note": "Ustavitev trgovanja 24. 2. 2014; ura ni potrjena.",
+      "milestones": [
+        {
+          "date": "2014-02-07",
+          "label": "Ustavitev dvigov BTC",
+          "affectsEstimation": true
+        },
+        {
+          "date": "2014-02-24",
+          "label": "Ustavitev trgovanja"
+        },
+        {
+          "date": "2014-02-28",
+          "label": "Predlog za stečaj v Tokiu"
+        }
+      ],
+      "confounders": [],
+      "type": "insolvency",
+      "primaryAsset": "BTC",
+      "assets": [
+        "BTC"
+      ],
+      "sectors": [
+        "centralized-exchange-token-cex"
+      ],
+      "keywords": [
+        "Mt. Gox",
+        "MtGox",
+        "Karpeles",
+        "bankruptcy",
+        "withdrawals halted"
+      ],
+      "actors": [],
+      "measured": {
+        "primaryAsset": "BTC",
+        "primaryStatus": "ok",
+        "primaryReason": null,
+        "M24": 2,
+        "M72": 3,
+        "AR24": -0.1,
+        "AR72": -0.2,
+        "direction": -1,
+        "relative": {
+          "M24": 0.6667,
+          "M72": 0.75
+        },
+        "assets": {}
+      }
+    }
+  ]
+}

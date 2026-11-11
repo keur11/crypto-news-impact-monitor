@@ -1,0 +1,126 @@
+# Ročni zagon: smoke test virov + backfill referenčne knjižnice na GitHub runnerju.
+# Rezultat (izpis, data/library.json, data/series/*, dnevnik) se shrani kot artifact.
+# Hkrati preveri dosegljivost data-api.binance.vision z ameriškega IP-ja runnerja.
+#
+# publish = false (privzeto): samo artifact za pregled (M_ref, vrednosti M).
+# publish = true: ob uspešnem backfillu (izhodna koda 0) se knjižnica objavi na vejo "data".
+#   S tem se odprejo vrata za cron (collect.yml zahteva data/library.json ali CRON_ENABLED = true).
+name: Smoke + backfill knjižnice
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Objavi izmerjeno knjižnico na vejo data (odpre vrata za cron)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # samo za publish = true (veja data)
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Oba sta secrets: dnevniki v javnem repozitoriju so javni, secrets pa GitHub v dnevniku maskira.
+      # Datoteke (artifacti) maskira koda sama (collector/lib/redact.js).
+      CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+      COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Obnovi stanje z veje data (da objava ohrani stanje zbiralnika)
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin data
+            git checkout FETCH_HEAD -- data
+            git reset -q
+          fi
+
+      - name: Obnovi predpomnilnik cen
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/prices
+          key: prices-${{ hashFiles('config/library.json', 'config/config.json') }}
+          restore-keys: prices-
+
+      - name: Lokacija runnerja (informativno)
+        continue-on-error: true
+        run: |
+          mkdir -p out
+          { echo "runner: ${RUNNER_OS} ${RUNNER_ARCH}"; echo "čas: $(date -u +%Y-%m-%dT%H:%M:%SZ)";
+            echo "država IP: $(curl -s --max-time 10 https://ipinfo.io/country || echo neznano)"; } | tee out/runner.txt
+
+      - name: Smoke test virov
+        id: smoke
+        run: |
+          set +e
+          npm run --silent smoke 2>&1 | tee out/smoke.txt
+          echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Backfill knjižnice
+        id: backfill
+        run: |
+          set +e
+          npm run --silent backfill 2>&1 | tee out/backfill.txt
+          echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Shrani predpomnilnik cen
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: cache/prices
+          key: prices-${{ hashFiles('config/library.json', 'config/config.json') }}-${{ github.run_id }}
+
+      - name: Povzetek
+        if: always()
+        run: |
+          {
+            echo "## Smoke test (izhodna koda ${{ steps.smoke.outputs.code }})"
+            echo '```'; cat out/smoke.txt 2>/dev/null; echo '```'
+            echo "## Backfill (izhodna koda ${{ steps.backfill.outputs.code }})"
+            echo '```'; cat out/backfill.txt 2>/dev/null; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Naloži artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backfill-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            out/
+            data/library.json
+            data/series/
+            data/backfill-log.json
+
+      - name: Objavi knjižnico na vejo data
+        if: inputs.publish && steps.backfill.outputs.code == '0'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-data-branch.sh "backfill knjižnice"
+
+      - name: Objava preskočena
+        if: inputs.publish && steps.backfill.outputs.code != '0'
+        run: echo "::warning title=Knjižnica ni objavljena::Backfill se ni končal z izhodno kodo 0 (koda ${{ steps.backfill.outputs.code }}). Preglej izpis; cron ostane izklopljen."
+
+      # Job je rdeč, če kritičen vir ni dosegljiv (smoke = 1), backfill pade (1)
+      # ali kriterij knjižnice ni izpolnjen (2). Artifact je naložen v vseh primerih.
+      - name: Rezultat
+        if: always()
+        run: |
+          echo "smoke=${{ steps.smoke.outputs.code }} backfill=${{ steps.backfill.outputs.code }}"
+          test "${{ steps.smoke.outputs.code }}" = "0" && test "${{ steps.backfill.outputs.code }}" = "0"

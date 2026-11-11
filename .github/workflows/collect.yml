@@ -1,0 +1,125 @@
+# Zbiralnik: tek vsakih 30 min (minute 7 in 37 – izogiba se zasedeni polni uri), objava stanja na vejo
+# "data" in dashboarda na GitHub Pages.
+#
+# Vrata: cron se izvede šele, ko na veji "data" obstaja data/library.json (backfill objavljen z
+# publish = true) ALI je spremenljivka repozitorija CRON_ENABLED = "true". Ročni zagon z force = true
+# vrata obide (npr. za preizkus).
+name: Zbiralnik (cron)
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Zaženi tudi, če cron še ni vklopljen (ni knjižnice in CRON_ENABLED ≠ true)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # veja data
+  pages: write      # objava na Pages
+  id-token: write   # objava na Pages
+
+# Ena skupina za vse workflowe, ki pišejo stanje (zbiralnik, backfill, keepalive): teki se ne prekrivajo.
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    env:
+      CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+      COINGECKO_DEMO_API_KEY: ${{ secrets.COINGECKO_DEMO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Obnovi stanje z veje data
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin data
+            git checkout FETCH_HEAD -- data
+            git reset -q
+            echo "Stanje obnovljeno: $(find data -type f | wc -l) datotek."
+          else
+            echo "Veja data še ne obstaja – prvi tek."
+          fi
+
+      - name: Vrata (knjižnica ali CRON_ENABLED)
+        id: gate
+        env:
+          CRON_ENABLED: ${{ vars.CRON_ENABLED }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "${CRON_ENABLED}" = "true" ] || [ -f data/library.json ] || [ "${FORCE}" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Cron ni vklopljen::Najprej zaženi »Smoke + backfill knjižnice« s publish = true ali nastavi spremenljivko CRON_ENABLED = true."
+          fi
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npm ci
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Obnovi predpomnilnik cen
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/prices
+          key: prices-collect-${{ github.run_id }}
+          restore-keys: |
+            prices-collect-
+            prices-
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Tek zbiralnika
+        run: npm run --silent collect
+
+      - if: steps.gate.outputs.run == 'true' && always()
+        name: Shrani predpomnilnik cen
+        uses: actions/cache/save@v4
+        with:
+          path: cache/prices
+          key: prices-collect-${{ github.run_id }}
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Objavi stanje na vejo data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-data-branch.sh "zbiralnik"
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Pripravi stran
+        run: |
+          mkdir -p site
+          cp index.html site/
+          cp -R data site/data
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/configure-pages@v5
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: collect
+    if: needs.collect.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

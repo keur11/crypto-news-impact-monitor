@@ -1,0 +1,22 @@
+{
+  "name": "crypto-news-impact-monitor",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Ocena pomembnosti kripto novic glede na tržni vpliv referenčnih dogodkov",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "collect": "node collector/run.js",
+    "test": "node --test tests/*.test.js",
+    "backfill": "node scripts/backfill-library.js",
+    "backfill:offline": "node scripts/backfill-library.js --offline",
+    "smoke": "node scripts/smoke-sources.js",
+    "calibrate": "node scripts/calibrate.js",
+    "bundle": "node collector/bundle.js"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.11.2"
+  }
+}

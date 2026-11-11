@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Crypto News Impact Monitor</title>
+<meta name="description" content="Ocena pomembnosti kripto novic glede na tržni vpliv referenčnih dogodkov. Analitično orodje, ni investicijski nasvet.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface-1: #1a1a19;
+    --surface-2: #232321;
+    --surface-3: #2c2c29;
+    --border: #3a3936;
+    --grid: #2f2f2c;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --score-low: #5f5e59;
+    --focus: #86b6ef;
+    --radius: 10px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text-primary); font: 15px/1.45 var(--font); overflow-x: hidden; }
+  a { color: var(--focus); }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  .muted { color: var(--text-muted); }
+  .secondary { color: var(--text-secondary); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Glava */
+  header.top { border-bottom: 1px solid var(--border); background: var(--surface-1); position: sticky; top: 0; z-index: 5; }
+  .brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 8px; flex-wrap: wrap; }
+  .brand h1 { font-size: 18px; margin: 0; letter-spacing: .2px; }
+  .run { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+  .dot.warn { background: var(--warning); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 4px 0 12px; }
+  .ctl { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+  select, .seg button, .types > summary { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; min-height: 34px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--surface-2); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--text-primary); font-weight: 600; }
+  .types { position: relative; }
+  .types > summary { list-style: none; cursor: pointer; }
+  .types > summary::-webkit-details-marker { display: none; }
+  .types[open] > .menu { display: grid; }
+  .menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; gap: 4px; min-width: 220px; max-width: calc(100vw - 32px); }
+  .menu label { display: flex; gap: 8px; align-items: center; padding: 3px 4px; color: var(--text-primary); }
+  .menu .row { display: flex; gap: 8px; margin-top: 4px; }
+  .menu .row button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; cursor: pointer; color: var(--text-secondary); }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .toggle input { width: 18px; height: 18px; accent-color: var(--series-1); }
+  nav.tabs { display: flex; gap: 4px; border-top: 1px solid var(--border); }
+  nav.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 12px; cursor: pointer; color: var(--text-secondary); }
+  nav.tabs button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--series-1); font-weight: 600; }
+
+  /* Opozorila */
+  .alerts { display: grid; gap: 8px; margin: 14px 0 0; }
+  .alert { display: flex; gap: 10px; align-items: flex-start; background: var(--surface-2); border: 1px solid var(--border); border-left: 4px solid var(--warning); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .alert.strong { border-left-color: var(--serious); }
+  .alert .icon { flex: none; font-weight: 700; color: var(--warning); }
+  .alert.strong .icon { color: var(--serious); }
+  .alert details summary { cursor: pointer; color: var(--text-secondary); }
+  .alert ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary); }
+
+  main { padding: 14px 0 32px; }
+  .summary-line { font-size: 13px; color: var(--text-muted); margin: 4px 0 12px; }
+
+  /* Kartice zgodb */
+  .cards { display: grid; gap: 10px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: grid; grid-template-columns: auto 1fr; gap: 12px; }
+  .card:hover { border-color: #4b4a46; }
+  .score { width: 58px; text-align: center; display: grid; gap: 4px; align-content: start; }
+  .badge { border-radius: 10px; font-weight: 700; font-size: 22px; padding: 8px 0; line-height: 1; }
+  .badge.s0 { background: var(--score-low); color: var(--text-primary); }
+  .badge.s1 { background: var(--warning); color: #1a1a19; }
+  .badge.s2 { background: var(--serious); color: #1a1a19; }
+  .badge.s3 { background: var(--critical); color: #fff; }
+  .badge.na { background: var(--surface-3); color: var(--text-muted); font-size: 16px; }
+  .st { font-size: 11px; color: var(--text-secondary); }
+  .st.confirmed::before { content: "✓ "; color: var(--good); }
+  .body { min-width: 0; }
+  .card h2 { font-size: 16px; margin: 0 0 6px; line-height: 1.3; overflow-wrap: anywhere; }
+  .card h2 button { all: unset; cursor: pointer; }
+  .card h2 button:hover { text-decoration: underline; }
+  .card h2 button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--text-secondary); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); background: var(--surface-2); border-radius: 999px; padding: 1px 8px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  .chip.type { color: var(--text-primary); }
+  .chip.flag { border-color: #6b4a1f; color: #f2c46d; }
+  .chip.flag::before { content: "!"; font-weight: 700; }
+  .chip.esc { border-color: #7a3524; color: #f3a184; }
+  .chip.esc::before { content: "↑"; font-weight: 700; }
+  .impact { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-secondary); }
+  .dir-down { color: #f08a8a; }
+  .dir-up { color: #6fd37a; }
+  .story-row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .linkbtn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+  .linkbtn:hover { color: var(--text-primary); }
+  .timeline { list-style: none; margin: 8px 0 0; padding: 0 0 0 14px; border-left: 2px solid var(--border); display: grid; gap: 6px; }
+  .timeline li { position: relative; font-size: 13px; }
+  .timeline li::before { content: ""; position: absolute; left: -20px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface-3); border: 2px solid var(--border); }
+  .timeline li.top::before { background: var(--series-1); border-color: var(--series-1); }
+  .timeline button { all: unset; cursor: pointer; overflow-wrap: anywhere; }
+  .timeline button:hover { text-decoration: underline; }
+  .timeline .tl-meta { color: var(--text-muted); font-size: 12px; }
+
+  .empty { background: var(--surface-1); border: 1px dashed var(--border); border-radius: var(--radius); padding: 24px 16px; text-align: center; color: var(--text-secondary); }
+  .empty h2 { color: var(--text-primary); font-size: 17px; margin: 0 0 8px; }
+  .empty code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+  /* Podrobnosti */
+  .drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 20; display: none; }
+  .drawer-bg.open { display: block; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(720px, 100vw); background: var(--surface-1); border-left: 1px solid var(--border); z-index: 21; overflow-y: auto; transform: translateX(100%); transition: transform .18s ease-out; padding: 0 16px 32px; }
+  .drawer.open { transform: none; }
+  .drawer-head { position: sticky; top: 0; background: var(--surface-1); display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 14px 0 10px; border-bottom: 1px solid var(--border); z-index: 1; }
+  .drawer-head h2 { font-size: 17px; margin: 0; overflow-wrap: anywhere; }
+  .close { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; width: 36px; height: 36px; cursor: pointer; flex: none; font-size: 18px; }
+  section.block { margin-top: 18px; }
+  section.block h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin: 0 0 8px; font-weight: 600; }
+  .bars { display: grid; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: minmax(110px, 170px) 1fr 52px; gap: 8px; align-items: center; font-size: 13px; }
+  .bar-track { background: var(--surface-3); border-radius: 4px; height: 12px; position: relative; overflow: hidden; }
+  .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--series-1); border-radius: 0 4px 4px 0; }
+  .bar-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .formula { margin-top: 10px; font-size: 13px; color: var(--text-secondary); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; }
+  .formula b { color: var(--text-primary); }
+  .tbl-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--text-muted); font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  ul.articles { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul.articles li { font-size: 14px; }
+  ul.articles .muted { font-size: 12px; }
+  .chart-box { position: relative; height: 240px; background: var(--surface-2); border-radius: 8px; padding: 8px; }
+  .chart-note { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+
+  /* Referenčni dogodki */
+  .ref-grid { display: grid; gap: 12px; }
+  .ref { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .ref h2 { font-size: 16px; margin: 0 0 4px; }
+  .milestones { list-style: none; margin: 8px 0; padding: 0 0 0 14px; border-left: 2px solid var(--border); display: grid; gap: 4px; font-size: 13px; }
+  .milestones li { position: relative; }
+  .milestones li::before { content: ""; position: absolute; left: -19px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--surface-3); border: 2px solid var(--border); }
+  .milestones li.t0::before { background: var(--critical); border-color: var(--critical); }
+  .milestones li.conf::before { background: var(--warning); border-color: var(--warning); }
+  .mbars { display: grid; gap: 8px; position: relative; }
+  .mbar-row { display: grid; grid-template-columns: minmax(120px, 200px) 1fr 56px; gap: 8px; align-items: center; font-size: 13px; }
+  .mbar-track { position: relative; height: 14px; background: var(--surface-3); border-radius: 4px; }
+  .mbar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--series-1); border-radius: 0 4px 4px 0; }
+  .mref { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-primary); }
+  .howto ol { padding-left: 20px; color: var(--text-secondary); font-size: 14px; }
+  .howto code, .ref code { font-family: var(--mono); font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  footer { border-top: 1px solid var(--border); padding: 16px 0 28px; color: var(--text-muted); font-size: 12px; }
+  footer p { margin: 4px 0; }
+  footer strong { color: var(--text-secondary); }
+
+  @media (max-width: 560px) {
+    .brand h1 { font-size: 16px; }
+    .card { grid-template-columns: 1fr; }
+    .score { width: auto; grid-template-columns: auto auto; justify-content: start; align-items: center; gap: 8px; }
+    .badge { padding: 6px 10px; font-size: 18px; }
+    .bar-row { grid-template-columns: 96px 1fr 44px; }
+    .mbar-row { grid-template-columns: 100px 1fr 44px; }
+    .chart-box { height: 210px; }
+    .filters .ctl > span.lbl { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .drawer { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Crypto News Impact Monitor</h1>
+      <div class="run" id="run"><span class="dot" id="runDot"></span><span id="runText">Nalagam …</span></div>
+    </div>
+    <div class="filters" id="filters">
+      <label class="ctl"><span class="lbl">Sektor</span>
+        <select id="fSector" aria-label="Sektor"><option value="">Vsi</option></select>
+      </label>
+      <div class="ctl"><span class="lbl">Obdobje</span>
+        <div class="seg" role="group" aria-label="Obdobje">
+          <button type="button" data-period="24" aria-pressed="false">24 h</button>
+          <button type="button" data-period="168" aria-pressed="true">7 dni</button>
+          <button type="button" data-period="336" aria-pressed="false">14 dni</button>
+        </div>
+      </div>
+      <details class="types" id="fTypes">
+        <summary id="fTypesLabel">Vsi tipi</summary>
+        <div class="menu" id="fTypesMenu"></div>
+      </details>
+      <label class="toggle ctl"><input type="checkbox" id="fConfirmed"> Samo potrjeni</label>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tabStories" aria-selected="true" aria-controls="viewStories">Zgodbe</button>
+      <button role="tab" id="tabRefs" aria-selected="false" aria-controls="viewRefs">Referenčni dogodki</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="alerts" id="alerts"></div>
+  <main>
+    <section id="viewStories" role="tabpanel" aria-labelledby="tabStories">
+      <p class="summary-line" id="summary"></p>
+      <div class="cards" id="cards"></div>
+    </section>
+    <section id="viewRefs" role="tabpanel" aria-labelledby="tabRefs" hidden></section>
+  </main>
+</div>
+
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true"></aside>
+
+<footer>
+  <div class="wrap" id="footer">
+    <p><strong>Orodje je analitično in ni investicijski nasvet.</strong> Ocene so statistične ocene tržnega vpliva preteklih dogodkov, ne napovedi cen.</p>
+  </div>
+</footer>
+
+<script src="data/bundle.js" onerror="window.__BUNDLE_MISSING__ = true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" defer
+  onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js';s.defer=true;document.head.appendChild(s);"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ---------- oblikovanje ----------
+  const TZ = 'Europe/Ljubljana';
+  const fmtTime = new Intl.DateTimeFormat('sl-SI', { timeZone: TZ, day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmtShort = new Intl.DateTimeFormat('sl-SI', { timeZone: TZ, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmtDate = new Intl.DateTimeFormat('sl-SI', { timeZone: TZ, day: 'numeric', month: 'numeric', year: 'numeric' });
+  const nfCache = {};
+  const nf = (x, d = 2) => {
+    if (x === null || x === undefined || !Number.isFinite(x)) return '—';
+    nfCache[d] ??= new Intl.NumberFormat('sl-SI', { minimumFractionDigits: d, maximumFractionDigits: d });
+    return nfCache[d].format(x);
+  };
+  const pct = (logRet, d = 1) => (Number.isFinite(logRet) ? `${nf((Math.exp(logRet) - 1) * 100, d)} %` : '—');
+  const t = (iso, f = fmtShort) => { const ms = Date.parse(iso); return Number.isFinite(ms) ? f.format(ms) : '—'; };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const safeUrl = (u) => (/^https?:\/\//i.test(String(u ?? '')) ? String(u) : null);
+
+  const TYPE = {
+    hack: 'Hekerski napad', insolvency: 'Insolventnost', protocol_failure: 'Odpoved protokola', etf_institutional: 'ETF / institucije',
+    regulation: 'Regulacija', listing: 'Uvrstitev', upgrade: 'Nadgradnja', tokenomics: 'Tokenomika', partnership: 'Partnerstvo', macro: 'Makro', other: 'Drugo',
+  };
+  const FLAG = { confounded: 'zamegljeno', shared_impact: 'deljen vpliv', no_market_asset: 'brez tržnega sredstva', no_market_data: 'brez tržnih podatkov' };
+  const FLAG_HELP = {
+    confounded: 'Sočasni tržni šum (velik premik BTC ali makro objava v ±24 h) otežuje pripis vpliva.',
+    shared_impact: 'Ista entiteta ima v 24 h dogodke iz drugih zgodb; tržni vpliv je pripisan vsem.',
+    no_market_asset: 'Dogodek nima kovanca med glavnimi entitetami; ocena ostane ex-ante.',
+    no_market_data: 'Ni para na Binance niti sektorskega indeksa ali ni podatkov.',
+  };
+  const STATUS = { expected: 'pričakovan', confirmed: 'potrjen' };
+  const NOVELTY = { first: 'prvi v zgodbi', follow_up: 'nadaljevanje', escalation: 'eskalacija' };
+  const COMP = { T: 'T – tip dogodka', C: 'C – širina pokritosti', Q: 'Q – kakovost vira', S: 'S – velikost entitete', A: 'A – analogi' };
+
+  // ---------- podatki ----------
+  async function loadData() {
+    if (window.__DATA__) return window.__DATA__;
+    // Brez bundle.js: prek file:// fetch ni dovoljen → prazno stanje; prek HTTP poskusi JSON datoteke.
+    if (location.protocol === 'file:') return null;
+    try {
+      const get = async (p) => { const r = await fetch(p, { cache: 'no-store' }); if (!r.ok) throw new Error(p); return r.json(); };
+      const [status, events, stories] = await Promise.all([get('data/status.json'), get('data/events.json'), get('data/stories.json').catch(() => ({ stories: [] }))]);
+      const library = await get('data/library.json').catch(() => null);
+      return { generatedAt: status.runAt, config: null, status, events: events.events, stories: stories.stories, library, libraryInput: null, librarySeries: {} };
+    } catch {
+      return null;
+    }
+  }
+
+  const DEFAULT_CFG = { sectors: [], types: Object.keys(TYPE), colorThresholds: [30, 60, 80], staleRunHours: 2, exAnteWeights: { T: 0.3, C: 0.2, Q: 0.1, S: 0.15, A: 0.25 }, finalWeights: { exAnte: 0.3, exPost: 0.7 }, sources: [], actors: {} };
+  let D = null;
+  let CFG = DEFAULT_CFG;
+  const state = { sector: '', period: 168, types: null, onlyConfirmed: false, expanded: new Set(), tab: 'stories' };
+  try {
+    const saved = JSON.parse(localStorage.getItem('cnim-filters') || 'null');
+    if (saved) Object.assign(state, { sector: saved.sector ?? '', period: saved.period ?? 168, types: saved.types ? new Set(saved.types) : null, onlyConfirmed: Boolean(saved.onlyConfirmed) });
+  } catch { /* shramba ni na voljo */ }
+  const saveFilters = () => {
+    try { localStorage.setItem('cnim-filters', JSON.stringify({ sector: state.sector, period: state.period, types: state.types ? [...state.types] : null, onlyConfirmed: state.onlyConfirmed })); } catch { /* ignoriraj */ }
+  };
+
+  const entityLabel = (id) => (String(id).startsWith('@') ? (CFG.actors?.[id] ?? id.slice(1)) : id);
+  const sectorName = (id) => CFG.sectors.find((s) => s.id === id)?.name ?? id;
+  const scoreClass = (s) => {
+    if (!Number.isFinite(s)) return 'na';
+    const [a, b, c] = CFG.colorThresholds;
+    return s < a ? 's0' : s < b ? 's1' : s <= c ? 's2' : 's3';
+  };
+  const libEvents = () => D?.library?.events ?? D?.libraryInput ?? [];
+  const libTitle = (id) => libEvents().find((e) => e.id === id)?.title ?? id;
+  const marketLabel = (m) => (m.kind === 'sector' ? `sektor ${sectorName(m.asset.slice(7))}` : m.kind === 'market' ? 'trg (top 20)' : m.asset);
+  const libMeasured = () => Boolean(D?.status?.library?.measured ?? (D?.library && Number.isFinite(D.library.refs?.M_ref24)));
+
+  // ---------- glava, opozorila ----------
+  function renderRun() {
+    const s = D?.status;
+    const dot = document.getElementById('runDot');
+    const txt = document.getElementById('runText');
+    if (!s) { dot.classList.add('warn'); txt.textContent = 'Ni podatkov zbiralnika'; return; }
+    const ageH = (Date.now() - Date.parse(s.runAt)) / 3600000;
+    const errSources = Object.values(s.sources ?? {}).filter((x) => x.enabled && x.ok === false && !x.skipped);
+    const warn = ageH > CFG.staleRunHours || errSources.length > 0;
+    dot.classList.toggle('warn', warn);
+    txt.textContent = `Zadnji tek: ${t(s.runAt, fmtTime)}`;
+    txt.title = `Trajanje ${nf((s.durationMs ?? 0) / 1000, 1)} s · ${s.articles?.total ?? 0} člankov · ${s.events?.total ?? 0} dogodkov`;
+  }
+
+  function alertBox(text, { strong = false, details = null } = {}) {
+    const div = document.createElement('div');
+    div.className = `alert${strong ? ' strong' : ''}`;
+    div.setAttribute('role', strong ? 'alert' : 'status');
+    div.innerHTML = `<span class="icon" aria-hidden="true">!</span><div><div>${esc(text)}</div>${details ? `<details><summary>Podrobnosti</summary><ul>${details.map((d) => `<li>${esc(d)}</li>`).join('')}</ul></details>` : ''}</div>`;
+    return div;
+  }
+
+  function renderAlerts() {
+    const box = document.getElementById('alerts');
+    box.innerHTML = '';
+    const s = D?.status;
+    if (!s) return;
+    if (!libMeasured()) {
+      box.append(alertBox('Referenčna knjižnica ni izmerjena – ocene niso kalibrirane. Velja T iz privzetih vrednosti, A = 0, brez ex-post potrditve; vsi dogodki so »pričakovani«.', { strong: true }));
+    } else if (s.library?.partial) {
+      box.append(alertBox(s.library.warning));
+    }
+    const ageH = (Date.now() - Date.parse(s.runAt)) / 3600000;
+    if (ageH > CFG.staleRunHours) box.append(alertBox(`Zadnji tek zbiralnika je star ${nf(ageH, 1)} h (več kot ${CFG.staleRunHours} h). Podatki morda niso ažurni.`, { strong: true }));
+    const errs = Object.entries(s.sources ?? {}).filter(([, x]) => x.enabled && x.ok === false && !x.skipped);
+    if (errs.length) box.append(alertBox(`Vir${errs.length > 1 ? 'i' : ''} v napaki: ${errs.map(([, x]) => x.name).join(', ')}`, { details: errs.map(([, x]) => `${x.name}: ${x.lastError ?? 'napaka'} (zadnje uspešno: ${x.lastSuccessAt ? t(x.lastSuccessAt, fmtTime) : 'nikoli'})`) }));
+    if (s.macroCalendar?.warning) box.append(alertBox(s.macroCalendar.warning));
+    if (s.keepalive?.warning) box.append(alertBox(s.keepalive.warning, { strong: true }));
+    const other = (s.warnings ?? []).filter((w) => !/Referenčna knjižnica|Koledar makro|Keepalive|Ponovno omogočanje/.test(w));
+    if (other.length) box.append(alertBox(`Opozorila zbiralnika (${other.length})`, { details: other }));
+  }
+
+  // ---------- filtri ----------
+  function renderFilters() {
+    const sel = document.getElementById('fSector');
+    sel.innerHTML = '<option value="">Vsi</option>' + CFG.sectors.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+    sel.value = state.sector;
+    sel.onchange = () => { state.sector = sel.value; saveFilters(); renderStories(); };
+
+    document.querySelectorAll('.seg button').forEach((b) => {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.period) === state.period));
+      b.onclick = () => { state.period = Number(b.dataset.period); document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); saveFilters(); renderStories(); };
+    });
+
+    const menu = document.getElementById('fTypesMenu');
+    const all = CFG.types;
+    if (!state.types) state.types = new Set(all);
+    menu.innerHTML = all.map((ty) => `<label><input type="checkbox" value="${esc(ty)}" ${state.types.has(ty) ? 'checked' : ''}> ${esc(TYPE[ty] ?? ty)}</label>`).join('') +
+      '<div class="row"><button type="button" data-act="all">Vsi</button><button type="button" data-act="none">Noben</button></div>';
+    const sync = () => {
+      const n = state.types.size;
+      document.getElementById('fTypesLabel').textContent = n === all.length ? 'Vsi tipi' : n === 0 ? 'Noben tip' : `Tipi: ${n}`;
+    };
+    menu.onchange = (e) => { if (e.target.type === 'checkbox') { e.target.checked ? state.types.add(e.target.value) : state.types.delete(e.target.value); sync(); saveFilters(); renderStories(); } };
+    menu.onclick = (e) => {
+      const act = e.target.dataset?.act;
+      if (!act) return;
+      state.types = new Set(act === 'all' ? all : []);
+      menu.querySelectorAll('input').forEach((i) => { i.checked = state.types.has(i.value); });
+      sync(); saveFilters(); renderStories();
+    };
+    sync();
+    const cb = document.getElementById('fConfirmed');
+    cb.checked = state.onlyConfirmed;
+    cb.onchange = () => { state.onlyConfirmed = cb.checked; saveFilters(); renderStories(); };
+    document.addEventListener('click', (e) => { const d = document.getElementById('fTypes'); if (d.open && !d.contains(e.target)) d.open = false; });
+  }
+
+  // ---------- zgodbe ----------
+  function refTime() { return Date.parse(D?.status?.runAt ?? D?.generatedAt ?? new Date().toISOString()); }
+
+  function filteredEvents() {
+    const since = refTime() - state.period * 3600000;
+    return (D?.events ?? []).filter((e) => {
+      if (Date.parse(e.firstSeenAt) < since) return false;
+      if (state.sector && !(e.sectors ?? []).includes(state.sector) && e.market?.asset !== `sector:${state.sector}`) return false;
+      if (state.types && !state.types.has(e.type)) return false;
+      if (state.onlyConfirmed && e.status !== 'confirmed') return false;
+      return true;
+    });
+  }
+
+  function storyGroups(events) {
+    const all = D?.events ?? [];
+    const byStory = new Map();
+    for (const e of events) {
+      const k = e.storyId ?? e.id;
+      if (!byStory.has(k)) byStory.set(k, []);
+      byStory.get(k).push(e);
+    }
+    const groups = [];
+    for (const [id, evs] of byStory) {
+      const top = evs.slice().sort((a, b) => (b.final ?? -1) - (a.final ?? -1) || b.firstSeenAt.localeCompare(a.firstSeenAt))[0];
+      const members = all.filter((e) => (e.storyId ?? e.id) === id).sort((a, b) => a.firstSeenAt.localeCompare(b.firstSeenAt));
+      groups.push({ id, top, members, matched: evs.length });
+    }
+    return groups.sort((a, b) => (b.top.final ?? -1) - (a.top.final ?? -1) || b.top.firstSeenAt.localeCompare(a.top.firstSeenAt));
+  }
+
+  function analogText(e) {
+    const a = (e.analogs ?? [])[0];
+    if (e.exPost?.nearestRef) {
+      const ratio = e.exPost.ratioToNearest;
+      return `vpliv ≈ ${Number.isFinite(ratio) ? nf(ratio * 100, 0) + ' %' : '—'} dogodka »${esc(libTitle(e.exPost.nearestRef))}«`;
+    }
+    return a ? `podobno: ${esc(a.title ?? libTitle(a.id))} (sim ${nf(a.sim, 2)})` : null;
+  }
+
+  function cardHtml(g) {
+    const e = g.top;
+    const sc = e.final;
+    const ents = (e.entities ?? []).slice(0, 5).map((x) => `<span class="chip">${esc(entityLabel(x))}</span>`).join('');
+    const flags = (e.flags ?? []).map((f) => `<span class="chip flag" title="${esc(FLAG_HELP[f] ?? '')}">${esc(FLAG[f] ?? f)}</span>`).join('');
+    const esc1 = e.novelty?.reason === 'escalation' ? `<span class="chip esc" title="${esc(e.novelty.escalation?.label ?? '')}">eskalacija ${esc(TYPE[e.novelty.escalation?.from] ?? '')} → ${esc(TYPE[e.novelty.escalation?.to] ?? '')}</span>` : '';
+    const dir = e.market?.status === 'ok' && Number.isFinite(e.market.ar24)
+      ? `<span class="${e.market.direction < 0 ? 'dir-down' : 'dir-up'}">${e.market.direction < 0 ? '▼' : '▲'} AR₂₄ ${pct(e.market.ar24)}</span> <span class="muted">(${esc(marketLabel(e.market))})</span>`
+      : '';
+    const an = analogText(e);
+    const multi = g.members.length > 1;
+    const open = state.expanded.has(g.id);
+    const tl = multi && open ? `<ol class="timeline">${g.members.map((m) => `
+      <li class="${m.id === e.id ? 'top' : ''}"><button type="button" data-open="${esc(m.id)}">${esc(m.title)}</button>
+      <div class="tl-meta">${t(m.firstSeenAt)} · ${esc(TYPE[m.type] ?? m.type)} · ocena ${Number.isFinite(m.final) ? m.final : '—'} · N ${nf(m.novelty?.N ?? 1, 1)}${m.novelty?.reason === 'escalation' ? ' · eskalacija' : ''}</div></li>`).join('')}</ol>` : '';
+    return `<article class="card">
+      <div class="score"><div class="badge ${scoreClass(sc)} num" aria-label="Ocena ${Number.isFinite(sc) ? sc : 'ni na voljo'}">${Number.isFinite(sc) ? sc : '—'}</div>
+        <div class="st ${esc(e.status)}">${esc(STATUS[e.status] ?? e.status)}</div></div>
+      <div class="body">
+        <h2><button type="button" data-open="${esc(e.id)}">${esc(e.title)}</button></h2>
+        <div class="meta"><span class="chip type">${esc(TYPE[e.type] ?? e.type)}</span>${ents}
+          <span>${e.nSources} ${e.nSources === 1 ? 'vir' : e.nSources === 2 ? 'vira' : e.nSources < 5 ? 'viri' : 'virov'}</span>
+          <span>${t(e.firstSeenAt)}</span></div>
+        ${dir || an || flags || esc1 ? `<div class="impact">${dir}${an ? `<span>${an}</span>` : ''}${esc1}${flags}</div>` : ''}
+        ${multi ? `<div class="story-row"><span class="chip">Zgodba: ${g.members.length} dogodkov</span>
+          <button type="button" class="linkbtn" data-toggle="${esc(g.id)}" aria-expanded="${open}">${open ? 'Skrij razvoj' : 'Prikaži razvoj'}</button></div>${tl}` : ''}
+      </div></article>`;
+  }
+
+  function renderStories() {
+    const cards = document.getElementById('cards');
+    const sum = document.getElementById('summary');
+    if (!D) {
+      sum.textContent = '';
+      cards.innerHTML = `<div class="empty"><h2>Ni podatkov</h2>
+        <p>Datoteka <code>data/bundle.js</code> ne obstaja. Zaženite zbiralnik: <code>npm run collect</code> (ali počakajte na prvi tek v GitHub Actions) in osvežite stran.</p>
+        <p class="muted">Dashboard ne kliče zunanjih API-jev; prikazuje samo podatke, ki jih zapiše zbiralnik.</p></div>`;
+      return;
+    }
+    const evs = filteredEvents();
+    const groups = storyGroups(evs);
+    const hours = state.period;
+    sum.textContent = `${groups.length} ${groups.length === 1 ? 'zgodba' : groups.length === 2 ? 'zgodbi' : groups.length < 5 ? 'zgodbe' : 'zgodb'} · ${evs.length} dogodkov · zadnjih ${hours === 24 ? '24 h' : hours / 24 + ' dni'} glede na zadnji tek`;
+    if (!groups.length) {
+      const none = (D.events ?? []).length === 0;
+      cards.innerHTML = `<div class="empty"><h2>${none ? 'Še ni dogodkov' : 'Ni dogodkov za izbrane filtre'}</h2>
+        <p>${none ? 'Zbiralnik še ni zbral nobene novice ali so vsi viri v napaki (glej opozorila zgoraj). Dogodki se prikažejo po prvem uspešnem teku.' : 'Razširite obdobje, izberite »Vsi« sektorje ali vključite več tipov dogodkov.'}</p></div>`;
+      return;
+    }
+    cards.innerHTML = groups.map(cardHtml).join('');
+  }
+
+  document.getElementById('cards').addEventListener('click', (ev) => {
+    const tog = ev.target.closest('[data-toggle]');
+    if (tog) { const id = tog.dataset.toggle; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); renderStories(); return; }
+    const op = ev.target.closest('[data-open]');
+    if (op) openDetail(op.dataset.open, op);
+  });
+
+  // ---------- podrobnosti ----------
+  let lastFocus = null;
+  const charts = [];
+  function destroyCharts() { while (charts.length) { try { charts.pop().destroy(); } catch { /* */ } } }
+
+  function bar(label, value, max, valText, title = '') {
+    const w = Number.isFinite(value) && max > 0 ? Math.max(0, Math.min(1, value / max)) * 100 : 0;
+    return `<div class="bar-row" title="${esc(title)}"><span>${esc(label)}</span><div class="bar-track" role="img" aria-label="${esc(label)}: ${esc(valText)}"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-val">${esc(valText)}</span></div>`;
+  }
+
+  function scoreBlock(e) {
+    const ea = e.exAnte;
+    if (!ea) return '<p class="muted">Ex-ante ocena še ni izračunana.</p>';
+    const w = CFG.exAnteWeights;
+    const bars = ['T', 'C', 'Q', 'S', 'A'].map((k) => bar(`${COMP[k]} (×${nf(w[k], 2)})`, ea[k], 1, nf(ea[k], 2), `prispevek ${nf(100 * w[k] * ea[k], 1)} točke`)).join('');
+    const N = e.novelty?.N ?? 1;
+    const nvTxt = NOVELTY[e.novelty?.reason] ?? 'brez zgodbe';
+    const escTxt = e.novelty?.reason === 'escalation' ? ` (eskalacija: ${TYPE[e.novelty.escalation?.from] ?? ''} → ${TYPE[e.novelty.escalation?.to] ?? ''})` : '';
+    const eff = e.exAnteEff?.score ?? ea.score;
+    const fw = CFG.finalWeights;
+    const final = e.exPost
+      ? `Končna = ${nf(fw.exAnte, 1)} · ${eff} + ${nf(fw.exPost, 1)} · ${e.exPost.score} = <b>${e.final}</b> (potrjen, ${esc(e.exPost.horizon)})`
+      : `Končna = ExAnte<sub>eff</sub> = <b>${e.final ?? eff}</b> (pričakovan${libMeasured() ? (e.market?.phase >= 24 ? '' : '; ex-post po 24 h') : '; knjižnica ni izmerjena'})`;
+    return `<div class="bars">${bars}${bar(`N – novost (${nvTxt})`, N, 1, nf(N, 1))}</div>
+      <div class="formula">ExAnte = 100 · Σ w·komponenta = <b>${ea.score}</b>${ea.frozen ? ' (zamrznjen)' : ' (začasen do ' + esc(t(ea.knownBy)) + ')'}<br>
+      ExAnte<sub>eff</sub> = ExAnte · N = ${ea.score} · ${nf(N, 1)} = <b>${eff}</b>${esc(escTxt)}<br>
+      ${e.exPost ? `ExPost = 100 · min(1, M / M<sub>ref</sub>) = 100 · min(1, ${nf(e.exPost.M, 2)} / ${nf(e.exPost.Mref, 2)}) = <b>${e.exPost.score}</b><br>` : ''}
+      ${final}${ea.calibrated ? '' : '<br><span class="muted">Knjižnica ni izmerjena: T iz privzetih vrednosti, A = 0.</span>'}</div>`;
+  }
+
+  function marketBlock(e) {
+    const m = e.market;
+    if (!m) return '<p class="muted">Tržni podatki se izmerijo po prvi zaprti urni sveči (z₁), nato po 24 h in 72 h.</p>';
+    if (m.status !== 'ok') return `<p class="muted">${esc(m.reason ?? 'Ni tržnih podatkov.')}</p>`;
+    const asset = m.kind === 'sector' ? `sektorski indeks ${sectorName(m.asset.slice(7))} (namesto ${m.replaces})`
+      : m.kind === 'market' ? `TRG – tržni indeks, top 20 po market cap, enake uteži (namesto ${m.replaces}: ${m.fallbackReason ?? 'ni para ali sektorja'})` : m.asset;
+    return `<p class="secondary" style="margin:0 0 6px">Merjeno: <b>${esc(asset)}</b> · faza ${m.phase === 72 ? '72 h (končno)' : m.phase === 24 ? '24 h' : '1 h'} · β = ${nf(m.beta, 2)}</p>
+      <div class="tbl-wrap"><table><thead><tr><th>z₁</th><th>z₂₄</th><th>z₇₂</th><th>V</th><th>M</th><th>AR₂₄</th><th>AR₇₂</th><th>z₂₄(BTC)</th></tr></thead>
+      <tbody><tr class="num"><td>${nf(m.z1)}</td><td>${nf(m.z24)}</td><td>${nf(m.z72)}</td><td>${nf(m.V)}</td><td>${nf(m.M)}</td><td>${pct(m.ar24)}</td><td>${pct(m.ar72)}</td><td>${nf(m.btcZ24)}</td></tr></tbody></table></div>`;
+  }
+
+  function indexSeries(points) {
+    if (!points?.length) return null;
+    const before = points.filter((p) => p[0] < 0);
+    const base = (before.length ? before[before.length - 1] : points[0])[1];
+    if (!(base > 0)) return null;
+    return points.map(([x, c]) => ({ x, y: (c / base - 1) * 100 }));
+  }
+
+  const vline = {
+    id: 'vline',
+    afterDatasetsDraw(chart, _args, opts) {
+      const x = chart.scales.x.getPixelForValue(opts.at ?? 0);
+      const { top, bottom } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.strokeStyle = '#c3c2b7';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#c3c2b7';
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText(opts.label ?? 'objava', x + 4, top + 12);
+      ctx.restore();
+    },
+  };
+
+  function lineChart(canvas, datasets, { xLabel, vLabel, xUnit }) {
+    if (!window.Chart) return false;
+    const css = getComputedStyle(document.documentElement);
+    const ch = new window.Chart(canvas, {
+      type: 'line',
+      data: { datasets: datasets.map((d) => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 8, tension: 0, parsing: false })) },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        plugins: {
+          legend: { display: false },
+          vline: { at: 0, label: vLabel },
+          tooltip: {
+            backgroundColor: '#232321', borderColor: '#3a3936', borderWidth: 1, titleColor: '#f0efec', bodyColor: '#c3c2b7',
+            callbacks: {
+              title: (items) => `${items[0].parsed.x >= 0 ? '+' : ''}${nf(items[0].parsed.x, 0)} ${xUnit}`,
+              label: (it) => ` ${it.dataset.label}: ${nf(it.parsed.y, 2)} %`,
+            },
+          },
+        },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: xLabel, color: css.getPropertyValue('--text-muted') }, grid: { color: '#2f2f2c' }, ticks: { color: '#8f8e86', callback: (v) => nf(v, 0) } },
+          y: { title: { display: true, text: 'sprememba od objave (%)', color: '#8f8e86' }, grid: { color: '#2f2f2c' }, ticks: { color: '#8f8e86', callback: (v) => nf(v, 1) } },
+        },
+      },
+      plugins: [vline],
+    });
+    charts.push(ch);
+    return true;
+  }
+
+  function chartSection(id, datasets, opts) {
+    const legend = `<div class="legend">${datasets.map((d) => `<span><i style="background:${d.color}"></i>${esc(d.label)}</span>`).join('')}</div>`;
+    return { html: `${legend}<div class="chart-box"><canvas id="${id}" aria-label="${esc(opts.aria)}" role="img"></canvas></div><p class="chart-note" id="${id}-note"></p>`, id, datasets, opts };
+  }
+
+  function mountCharts(list) {
+    const tryMount = (attempt = 0) => {
+      if (!window.Chart) {
+        if (attempt < 20) return setTimeout(() => tryMount(attempt + 1), 150);
+        list.forEach((c) => { const n = document.getElementById(`${c.id}-note`); if (n) n.textContent = 'Graf ni na voljo (knjižnica Chart.js s CDN ni dosegljiva). Vrednosti so v tabeli.'; });
+        return;
+      }
+      list.forEach((c) => { const el = document.getElementById(c.id); if (el) lineChart(el, c.datasets, c.opts); });
+    };
+    tryMount();
+  }
+
+  function openDetail(id, opener) {
+    const e = (D?.events ?? []).find((x) => x.id === id);
+    if (!e) return;
+    lastFocus = opener ?? document.activeElement;
+    destroyCharts();
+    const dr = document.getElementById('drawer');
+    const s = e.market?.series;
+    const ds = [];
+    if (s?.asset?.length) ds.push({ label: e.market.kind === 'sector' ? `Sektor ${sectorName(e.market.asset.slice(7))}` : e.market.kind === 'market' ? 'Trg (top 20, enake uteži)' : e.market.asset, data: indexSeries(s.asset), color: '#3987e5' });
+    if (s?.sector?.points?.length && e.market.kind === 'coin') ds.push({ label: `Sektorski indeks ${sectorName(s.sector.id)}`, data: indexSeries(s.sector.points), color: '#d95926' });
+    else if (s?.market?.points?.length && e.market.kind === 'coin') ds.push({ label: 'Trg (top 20, enake uteži)', data: indexSeries(s.market.points), color: '#d95926' });
+    if (s?.btc?.length) ds.push({ label: 'BTC', data: indexSeries(s.btc), color: '#199e70' });
+    const chart = ds.length ? chartSection('evChart', ds.filter((d) => d.data), { xLabel: 'ure od objave', vLabel: 'objava', xUnit: 'h', aria: 'Cena ±24 h okoli objave' }) : null;
+    const arts = (e.articles ?? []).slice().sort((a, b) => String(a.publishedAt ?? a.ingestedAt).localeCompare(String(b.publishedAt ?? b.ingestedAt)));
+    const srcName = (id2) => CFG.sources.find((x) => x.id === id2)?.name ?? id2;
+    const story = D.events.filter((x) => x.storyId && x.storyId === e.storyId).sort((a, b) => a.firstSeenAt.localeCompare(b.firstSeenAt));
+    const reasons = Object.entries(e.flagReasons ?? {}).flatMap(([k, v]) => v.map((r) => `${FLAG[k] ?? k}: ${r}`));
+    dr.innerHTML = `
+      <div class="drawer-head"><div><h2 id="drawerTitle">${esc(e.title)}</h2>
+        <div class="meta" style="margin-top:6px"><span class="badge ${scoreClass(e.final)} num" style="font-size:14px;padding:3px 8px">${Number.isFinite(e.final) ? e.final : '—'}</span>
+        <span>${esc(STATUS[e.status] ?? e.status)}</span><span class="chip type">${esc(TYPE[e.type] ?? e.type)}</span>${(e.entities ?? []).map((x) => `<span class="chip">${esc(entityLabel(x))}</span>`).join('')}
+        <span>${t(e.firstSeenAt, fmtTime)}</span></div></div>
+        <button class="close" type="button" aria-label="Zapri podrobnosti" id="closeDrawer">×</button></div>
+      <section class="block"><h3>Razčlenitev ocene</h3>${scoreBlock(e)}</section>
+      <section class="block"><h3>Tržni vpliv</h3>${marketBlock(e)}</section>
+      ${chart ? `<section class="block"><h3>Cena ±24 h okoli objave</h3>${chart.html}</section>` : ''}
+      ${(e.analogs ?? []).length ? `<section class="block"><h3>Referenčni analogi</h3><ul class="articles">${e.analogs.map((a) => `<li>${esc(a.title ?? libTitle(a.id))} <span class="muted">· sim ${nf(a.sim, 2)} (tip ${nf(a.parts?.type, 0)}, entitete ${nf(a.parts?.entities, 2)}, ključne besede ${nf(a.parts?.keywords, 2)})${Number.isFinite(a.rel) ? ` · M/M_ref ${nf(a.rel, 2)}` : ' · ni izmerjeno'}</span></li>`).join('')}</ul></section>` : ''}
+      ${reasons.length ? `<section class="block"><h3>Oznake</h3><ul class="articles">${reasons.map((r) => `<li class="secondary">${esc(r)}</li>`).join('')}</ul></section>` : ''}
+      ${story.length > 1 ? `<section class="block"><h3>Zgodba (${story.length} dogodkov)</h3><ol class="timeline">${story.map((m) => `<li class="${m.id === e.id ? 'top' : ''}"><button type="button" data-open="${esc(m.id)}">${esc(m.title)}</button><div class="tl-meta">${t(m.firstSeenAt)} · ${esc(TYPE[m.type] ?? m.type)} · ocena ${Number.isFinite(m.final) ? m.final : '—'} · N ${nf(m.novelty?.N ?? 1, 1)}${m.novelty?.reason === 'escalation' ? ' · eskalacija' : ''}</div></li>`).join('')}</ol></section>` : ''}
+      <section class="block"><h3>Članki (${arts.length})</h3><ul class="articles">${arts.map((a) => {
+        const u = safeUrl(a.url);
+        return `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a>` : esc(a.title)}<div class="muted">${esc(srcName(a.source))} · ${t(a.publishedAt ?? a.ingestedAt, fmtTime)}</div></li>`;
+      }).join('')}</ul></section>`;
+    dr.classList.add('open');
+    dr.setAttribute('aria-hidden', 'false');
+    document.getElementById('drawerBg').classList.add('open');
+    document.getElementById('closeDrawer').focus();
+    if (chart) mountCharts([chart]);
+  }
+
+  function closeDetail() {
+    const dr = document.getElementById('drawer');
+    if (!dr.classList.contains('open')) return;
+    dr.classList.remove('open');
+    dr.setAttribute('aria-hidden', 'true');
+    document.getElementById('drawerBg').classList.remove('open');
+    destroyCharts();
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  }
+  document.getElementById('drawer').addEventListener('click', (ev) => {
+    if (ev.target.closest('#closeDrawer')) return closeDetail();
+    const op = ev.target.closest('[data-open]');
+    if (op) openDetail(op.dataset.open, lastFocus);
+  });
+  document.getElementById('drawerBg').addEventListener('click', closeDetail);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeDetail(); });
+
+  // ---------- referenčni dogodki ----------
+  function renderRefs() {
+    const view = document.getElementById('viewRefs');
+    destroyCharts();
+    const evs = libEvents();
+    const measured = libMeasured();
+    const refs = D?.library?.refs ?? null;
+    const head = `<div class="alert strong" role="note"><span class="icon" aria-hidden="true">!</span><div>Vsi referenčni dogodki so <b>negativni šoki</b> (propadi, vdori, prepovedi). Vpliv se meri po absolutni vrednosti, smer je prikazana ločeno; pozitivni dogodki (npr. odobritve ETF) so v knjižnici podzastopani.</div></div>`;
+    if (!evs.length) {
+      view.innerHTML = `${head}<div class="empty" style="margin-top:12px"><h2>Ni referenčnih dogodkov</h2><p>V podatkih ni knjižnice. Zaženite zbiralnik ali backfill.</p></div>${howto()}`;
+      return;
+    }
+    const rows = evs.map((e) => ({ e, M: e.measured?.M72 ?? null }));
+    const maxM = Math.max(...rows.map((r) => r.M ?? 0), refs?.M_ref72 ?? 0, 1e-9);
+    const mref = refs?.M_ref72;
+    const compare = measured
+      ? `<section class="block"><h3>Primerjava M₇₂ (primarno sredstvo)</h3>
+        <div class="legend"><span><i style="background:#3987e5;height:8px"></i>M₇₂</span><span><i style="background:#f0efec;width:2px;height:12px"></i>M<sub>ref</sub> (mediana) = ${nf(mref, 2)}</span></div>
+        <div class="mbars">${rows.map((r) => `<div class="mbar-row"><span>${esc(r.e.title)}</span><div class="mbar-track" role="img" aria-label="${esc(r.e.title)}: M72 ${esc(nf(r.M, 2))}">
+          ${Number.isFinite(r.M) ? `<div class="mbar-fill" style="width:${(r.M / maxM) * 100}%"></div>` : ''}${Number.isFinite(mref) ? `<div class="mref" style="left:calc(${(mref / maxM) * 100}% - 1px)"></div>` : ''}</div>
+          <span class="bar-val">${nf(r.M, 1)}</span></div>`).join('')}</div>
+        <p class="chart-note">M = (0,6·|z₂₄| + 0,4·|z₇₂|) · f(V). Ocena 100 pomeni vpliv velikosti mediane knjižnice.</p></section>`
+      : `<div class="alert strong" style="margin-top:12px"><span class="icon" aria-hidden="true">!</span><div>Knjižnica ni izmerjena. Spodaj so ročno vneseni dogodki z mejniki; metrike in grafi se prikažejo po zagonu backfilla (<code>npm run backfill</code> ali workflow »Smoke + backfill knjižnice«).</div></div>`;
+    const chartsToMount = [];
+    const cards = evs.map((e, i) => {
+      const ms = [...(e.milestones ?? []).map((m) => ({ ...m, k: 'm' })), ...(e.confounders ?? []).map((m) => ({ ...m, k: 'c' }))].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const t0day = String(e.t0).slice(0, 10);
+      const mlist = `<ul class="milestones">${ms.map((m) => `<li class="${m.k === 'c' ? 'conf' : String(m.date).slice(0, 10) === t0day && /t0/.test(m.label) ? 't0' : ''}"><span class="muted">${esc(String(m.date).length > 10 ? t(m.date, fmtTime) : fmtDate.format(Date.parse(m.date)))}</span> · ${esc(m.label)}${m.k === 'c' ? ' <span class="muted">(sočasni dejavnik)</span>' : ''}</li>`).join('')}</ul>`;
+      const assets = Object.entries(e.measured?.assets ?? {});
+      const table = assets.length ? `<div class="tbl-wrap"><table><thead><tr><th>Sredstvo</th><th>Vir</th><th class="num">z₂₄</th><th class="num">z₇₂</th><th class="num">V</th><th class="num">M₂₄</th><th class="num">M₇₂</th><th class="num">AR₇₂</th></tr></thead><tbody>${assets.map(([k, a]) => a.status === 'ok'
+        ? `<tr><td>${esc(k)}${k === e.primaryAsset ? ' *' : ''}</td><td class="muted">${esc(a.resolution)}</td><td class="num">${nf(a.z24)}</td><td class="num">${nf(a.z72)}</td><td class="num">${nf(a.V)}</td><td class="num">${nf(a.M24)}</td><td class="num">${nf(a.M72)}</td><td class="num">${pct(a.ar72)}</td></tr>`
+        : `<tr><td>${esc(k)}</td><td colspan="7" class="muted" style="white-space:normal">${a.status === 'info' ? `stablecoin: največji odmik od vezave ${nf(a.maxDepegBps, 0)} bt` : `izpuščeno: ${esc(a.reason ?? '')}`}</td></tr>`).join('')}</tbody></table></div><p class="chart-note">* primarno sredstvo</p>` : '';
+      const ser = D?.librarySeries?.[e.id]?.assets ?? {};
+      const t0ms = Date.parse(e.t0);
+      const palette = ['#3987e5', '#d95926', '#199e70'];
+      const ds = Object.entries(ser).filter(([, s]) => s?.points?.length).slice(0, 3).map(([k, s], j) => {
+        const pts = s.points.map(([iso, c]) => [(Date.parse(iso) - t0ms) / 86400000, c]);
+        return { label: k, data: indexSeries(pts), color: palette[j] };
+      }).filter((d) => d.data);
+      let chartHtml = '';
+      if (ds.length) {
+        const c = chartSection(`refChart${i}`, ds, { xLabel: 'dnevi od t₀', vLabel: 't₀', xUnit: 'd', aria: 'Cena ±7 dni okoli ' + e.title }); // aria se v chartSection izpiše skozi esc()
+        chartsToMount.push(c);
+        chartHtml = `<section class="block"><h3>Cena ±7 dni (indeksirano na t₀)</h3>${c.html}</section>`;
+      }
+      const prec = e.t0Precision === 'hour' ? t(e.t0, fmtTime) : `${fmtDate.format(t0ms)} (na dan natančno)`;
+      return `<article class="ref"><h2>${esc(e.title)}</h2>
+        <div class="meta"><span class="chip type">${esc(TYPE[e.type] ?? e.type)}</span><span>t₀: ${esc(prec)}</span><span>primarno: ${esc(e.primaryAsset)}</span>
+        ${Number.isFinite(e.measured?.M72) ? `<span>M₇₂ = ${nf(e.measured.M72, 2)}</span>` : '<span class="muted">ni izmerjeno</span>'}</div>
+        ${mlist}${table}${chartHtml}</article>`;
+    }).join('');
+    view.innerHTML = `${head}${compare}<section class="block"><h3>Dogodki (${evs.length})</h3><div class="ref-grid">${cards}</div></section>${howto()}`;
+    if (chartsToMount.length) mountCharts(chartsToMount);
+  }
+
+  function howto() {
+    return `<section class="block howto"><h3>Dodajanje referenčnega dogodka</h3><ol>
+      <li>V <code>config/library.json</code> dodajte zapis z <code>id</code>, <code>title</code>, <code>t0</code>, <code>t0Precision</code> (<code>"hour"</code> zahteva <code>t0Source</code> z URL-jem ali ID-jem tweeta), <code>type</code>, <code>primaryAsset</code>, <code>assets</code>, <code>milestones</code>, <code>confounders</code> (vnosi pred t₀ z <code>affectsEstimation</code>) in <code>keywords</code>.</li>
+      <li>Po potrebi dodajte vir cen v <code>config.assets</code>.</li>
+      <li>Zaženite <code>npm run backfill</code> (ali workflow »Smoke + backfill knjižnice«) in osvežite dashboard.</li>
+      <li>Dodajajte tudi pozitivne dogodke, da knjižnica ne bo pristranska k negativnim šokom.</li></ol></section>`;
+  }
+
+  // ---------- zavihki, noga ----------
+  function setTab(tab) {
+    state.tab = tab;
+    document.getElementById('tabStories').setAttribute('aria-selected', String(tab === 'stories'));
+    document.getElementById('tabRefs').setAttribute('aria-selected', String(tab === 'refs'));
+    document.getElementById('viewStories').hidden = tab !== 'stories';
+    document.getElementById('viewRefs').hidden = tab !== 'refs';
+    document.getElementById('filters').style.display = tab === 'stories' ? '' : 'none';
+    if (tab === 'refs') renderRefs();
+    else destroyCharts();
+  }
+  document.getElementById('tabStories').onclick = () => setTab('stories');
+  document.getElementById('tabRefs').onclick = () => setTab('refs');
+
+  function renderFooter() {
+    const f = document.getElementById('footer');
+    const news = (CFG.sources ?? []).filter((s) => s.enabled).map((s) => s.name).join(', ');
+    f.insertAdjacentHTML('beforeend', `
+      <p><strong>Viri podatkov:</strong> novice – RSS ${esc(news || 'CoinDesk, Cointelegraph, Decrypt, The Block, CryptoSlate, SEC')};
+      sektorji in tržna kapitalizacija – <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer">CoinGecko API</a> (Data provided by CoinGecko);
+      cene – Binance (data-api.binance.vision, data.binance.vision) in Bitstamp.</p>
+      <p>Časi so prikazani v časovnem pasu Europe/Ljubljana.${D?.config?.version ? ` Različica ${esc(D.config.version)}.` : ''}${D?.generatedAt ? ` Podatki ustvarjeni ${esc(t(D.generatedAt, fmtTime))}.` : ''}</p>`);
+  }
+
+  // ---------- zagon ----------
+  loadData().then((data) => {
+    D = data;
+    CFG = { ...DEFAULT_CFG, ...(data?.config ?? {}) };
+    renderRun();
+    renderAlerts();
+    renderFilters();
+    renderStories();
+    renderFooter();
+  });
+})();
+</script>
+</body>
+</html>
